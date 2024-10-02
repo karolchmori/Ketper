@@ -2,7 +2,7 @@ import maya.cmds as mc
 import ElementsUI as elUI
 import util
 
-AOVsButtons = ['addAOVsBTT','impAOVsBTT','expAOVsBTT','delAOVsBTT']
+AOVsButtons = ['addAOVsBTT','impAOVsBTT','expAOVsBTT']
 
 
 def page(mainWidth, mainHeight):
@@ -23,10 +23,9 @@ def page(mainWidth, mainHeight):
     selectionAOVs = elUI.doubleListUI('', mainWidth - 80, 100, 'activeAOVList','enabledAOVList')
     mc.columnLayout()
 
-    mc.button(AOVsButtons[0], l='Add', en=False, c= lambda _: addEnabledAOVs()) # Able to delete all enabled AOVs, updates checking if the enabled are active or not.
+    mc.button(AOVsButtons[0], l='Modify', en=False, c= lambda _: modifyEnabledAOVs()) # Able to delete all enabled AOVs, updates checking if the enabled are active or not.
     mc.button(AOVsButtons[1], l='Import', en=False, c= lambda _: importEnabledAOVs()) # Imports the json file with the selected AOV's and updates (upsert)
     mc.button(AOVsButtons[2], l='Export', en=False, c= lambda _: exportEnabledAOVs()) # Creates a json with the selection 
-    mc.button(AOVsButtons[3], l='Clean All', en=False, c= lambda _: cleanEnabledAOVs())
     mc.setParent( '..' ) # End columnLayout
     mc.setParent( '..' ) # End rowLayout
 
@@ -68,7 +67,7 @@ def loadCurrentLayer():
     util.select.setfocusMaya()
 
 #TODO IF IT EXISTS DON'T ADD
-def addEnabledAOVs():
+def modifyEnabledAOVs():
     currentLayer = mc.textField('currentLayerTXT', q=True, tx=True)
     visibleLayer = util.rendering.getCurrentLayer()
     visibleLayer = util.naming.modifyName("delete",currentLayer,"rs_")
@@ -80,37 +79,16 @@ def addEnabledAOVs():
             #first we create the collection with original names
             util.rendering.createAOVCollection(currentLayer, selectedAOVs)
             #Modify values (BE CAREFUL NAMING)
-            selectedAOVs = util.naming.modifyNameList('prefix', selectedAOVs,'aiAOV_')
+            selectedAOVs = util.naming.modifyNameList('prefix', selectedAOVs,'aiAOV_', '')
+
             for aov in selectedAOVs:
                 mc.setAttr(f"{aov}.enabled", 1)
         else:
-            mc.confirmDialog( title='Error', message="Please select AOVs", button=['OK'], defaultButton='OK')
-    else: 
-        mc.confirmDialog( title='Error', message="Please make sure loaded layer and visible are the same", button=['OK'], defaultButton='OK')
-
-
-def cleanEnabledAOVs():
-    currentLayer = mc.textField('currentLayerTXT', q=True, tx=True)
-    visibleLayer = util.rendering.getCurrentLayer()
-    visibleLayer = util.naming.modifyName("delete",currentLayer,"rs_")
-
-    if currentLayer == visibleLayer:
-        loadCurrentLayer()
-        selectedAOVs = util.select.getSelectedValuesDoubleList('enabledAOVList')
-        if selectedAOVs:
-            #Delete AOV collection
             util.rendering.deleteAOVCollection(currentLayer)
-
-            #Modify Values (BE CAREFUL NAMING)
-            selectedAOVs = util.naming.modifyNameList('prefix', selectedAOVs,'aiAOV_')
-            for aov in selectedAOVs:
-                mc.setAttr(f"{aov}.enabled", 0)
-                newName = util.naming.modifyName('delete',aov,'aiAOV_')
-
-                mc.textScrollList('activeAOVList', edit=True, append=newName)
-                mc.textScrollList('enabledAOVList', edit=True, removeItem=newName)
+            loadCurrentLayer()
     else: 
         mc.confirmDialog( title='Error', message="Please make sure loaded layer and visible are the same", button=['OK'], defaultButton='OK')
+
 
 def importEnabledAOVs():
     currentLayer = mc.textField('currentLayerTXT', q=True, tx=True)
