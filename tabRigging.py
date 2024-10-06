@@ -103,8 +103,14 @@ def createArmJoints():
     mc.connectAttr(f"{controlName}.switchIKFK", f"{reverseNode}.inputX", force=True)
     mc.connectAttr(f"{reverseNode}.outputX", "IK_Arm_Controls_" + firstGroup + ".visibility", force=True)
 
+    # ----------------------------------------------------------------------
+    # --------------------------- PAIR BLENDS ------------------------------
+    # ----------------------------------------------------------------------
+    for i in range(len(armJoints[0])):
+        pbNode = util.rigging.createPB(armJoints[0][i], armJoints[1][i], armJoints[2][i], True, True)
+        mc.connectAttr(f"{controlName}.switchIKFK", f"{pbNode}.weight", force=True)
 
-    
+
 
     #Disable button
     mc.button('armCreateButton', e=True, en=False)

@@ -325,6 +325,21 @@ def parentControlJoints(listControls, listJoints):
         mc.parentConstraint(listControls[i], listJoints[i], mo=True, w=1)
     
 
+def createPB(jointMain, jointA, jointB, trBool, rotBool):
+    
+    node = mc.createNode('pairBlend')
+
+    if trBool:
+        mc.connectAttr(jointA + '.translate', node + '.inTranslate1')
+        mc.connectAttr(jointB + '.translate', node + '.inTranslate2')
+        mc.connectAttr(node + '.outTranslate', jointMain + '.translate')
+
+    if rotBool:
+        mc.connectAttr(jointA + '.rotate', node + '.inRotate1')
+        mc.connectAttr(jointB + '.rotate', node + '.inRotate2')
+        mc.connectAttr(node + '.outRotate', jointMain + '.rotate')
+
+    return node
 
 #endregion
 
