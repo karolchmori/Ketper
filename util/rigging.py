@@ -183,32 +183,9 @@ def createArmChain(locatorList):
 
     return jointNames
 
+#endregion
 
-def copyJoints(listJoints, newPrefix):
-    newJoints = []
-    newNames = []
-
-    duplicatedJoints = mc.duplicate(listJoints, rr=True)
-
-    newJoints = mc.listRelatives(duplicatedJoints[0], allDescendents=True, type='joint', fullPath = True)
-    newJoints.append(duplicatedJoints[0])
-    mc.select(newJoints)
-
-    selectedObjects = mc.ls(selection=True, type='transform') #we select only transform to change names
-
-    for obj in selectedObjects:
-        shortName = obj.split('|')[-1]
-        cleanName = re.sub(r'\d+$', '', shortName)
-
-        newName = newPrefix + '_' + cleanName
-        mc.rename(obj, newName)
-        newNames.append(newName)
-
-    newNames.reverse()
-    newList = newNames
-
-    return newList
-
+#region Controls
 
 def createCTLJointList(listJoints, groupStructure):
     firstRoot = groupStructure.split(';')[0]
@@ -283,8 +260,14 @@ def createIkCTLJointList(IKHandle,poleVectorPos,groupStructure):
 
     return listControls
 
+
+def parentControlJoints(listControls, listJoints):
+
+    for i in range(0,len(listControls)):
+        mc.parentConstraint(listControls[i], listJoints[i], mo=True, w=1)
+
 def movePVControl(listJoints, control, distance):
-    
+    #Only translation
     poleV = getVectorPos(listJoints[0], listJoints[1], listJoints[2], distance)
     mc.cycleCheck(e=False)
     tempConstraint = mc.parentConstraint(listJoints[1], control, st=["x","z","y"])
@@ -292,9 +275,41 @@ def movePVControl(listJoints, control, distance):
     mc.delete(tempConstraint)
     mc.cycleCheck(e=True)
     
-    # Move the control to the new position and new rotation
+    # Move the control to the new position (rotation outside with a parent)
     mc.xform(control, worldSpace=True, translation=(poleV.x, poleV.y, poleV.z))
-    #mc.xform(control, worldSpace=True, rotation=((rot.x/math.pi*180.0), (rot.y/math.pi*180.0), (rot.z/math.pi*180.0)))
+
+
+#endregion
+
+
+#region Utils
+
+def copyJoints(listJoints, newPrefix):
+    newJoints = []
+    newNames = []
+
+    duplicatedJoints = mc.duplicate(listJoints, rr=True)
+
+    newJoints = mc.listRelatives(duplicatedJoints[0], allDescendents=True, type='joint', fullPath = True)
+    newJoints.append(duplicatedJoints[0])
+    mc.select(newJoints)
+
+    selectedObjects = mc.ls(selection=True, type='transform') #we select only transform to change names
+
+    for obj in selectedObjects:
+        shortName = obj.split('|')[-1]
+        cleanName = re.sub(r'\d+$', '', shortName)
+
+        newName = newPrefix + '_' + cleanName
+        mc.rename(obj, newName)
+        newNames.append(newName)
+
+    newNames.reverse()
+    newList = newNames
+
+    return newList
+
+
 
 def getVectorPos(rootPos, midPos, endPos, distance):
 
@@ -319,14 +334,8 @@ def getWorldPos(obj):
     return mc.xform(obj, query=True, worldSpace=True, translation=True)
 
 
-def parentControlJoints(listControls, listJoints):
-
-    for i in range(0,len(listControls)):
-        mc.parentConstraint(listControls[i], listJoints[i], mo=True, w=1)
-    
 
 def createPB(jointMain, jointA, jointB, trBool, rotBool):
-    
     node = mc.createNode('pairBlend')
 
     if trBool:
@@ -342,6 +351,7 @@ def createPB(jointMain, jointA, jointB, trBool, rotBool):
     return node
 
 #endregion
+
 
 #TODO CHECK --------------------------------------------------------------------------------------------------------------------
 def mirrorJointChain():
