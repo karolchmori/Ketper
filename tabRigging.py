@@ -32,7 +32,6 @@ def page(mainWidth, mainHeight):
     mc.setParent('..') # End rowLayout
     mc.setParent('..') # End frameLayout
     mc.setParent( '..' ) # End columnLayout  
-
     return child
 
 def createLocatorArm():
@@ -49,19 +48,28 @@ def createArmJoints():
 
     #Create arms and duplicate to IK and FK
     armJoints.append(util.rigging.createArmChain(armLocators))
+
+    # ----------------------------------------------------------------------
+    # --------------------------- CREATE IK ARM ----------------------------
+    # ----------------------------------------------------------------------
     
-    #Create IK ARM
     armJoints.append(util.rigging.copyJoints(armJoints[0],'IK'))
     ikHandle = mc.ikHandle(n='IK_Arm_HDL', sj=armJoints[1][0], ee=armJoints[1][2], sol='ikRPsolver')[0] 
     listControls = util.rigging.createIkCTLJointList(ikHandle, armJoints[1][1] ,groupStructure)
     mc.parentConstraint(listControls[0], ikHandle, mo=True, w=1)
     mc.poleVectorConstraint( listControls[1], ikHandle)
     mc.orientConstraint( listControls[0], armJoints[1][2], mo=True)
+
+    #Create groups and parent it. ALSO move PV Control to a position inside the plane
     lastGroup = util.create.createGroupStructure(groupStructure,'IK_Arm_Controls',None)
+    util.rigging.movePVControl(armJoints[1], 'IK_Arm_PV_' + firstGroup, 4)
     mc.parent('IK_Arm_' + firstGroup, lastGroup)
     mc.parent('IK_Arm_PV_' + firstGroup, lastGroup)
     
-
+    
+    # ----------------------------------------------------------------------
+    # --------------------------- CREATE FK ARM ----------------------------
+    # ----------------------------------------------------------------------
 
     #Create FK ARM Chain with all Groups
     armJoints.append(util.rigging.copyJoints(armJoints[0],'FK'))
@@ -73,8 +81,32 @@ def createArmJoints():
     mc.parent(tempRoot, lastGroup)
 
 
+    # ----------------------------------------------------------------------
+    # --------------------------- PREFERENCES ------------------------------
+    # ----------------------------------------------------------------------
+    controlName = 'Arm_Preferences_CTL'
     lastGroup = util.create.createGroupStructure(groupStructure,'Arm_Preferences_Controls',None)
+    util.create.createTextCurves('Switch')
+    selection = mc.ls(sl=True)[0]
+    mc.parent(selection, lastGroup)
+    mc.rename(selection, controlName)
+    
+    tempGroup = 'Arm_Preferences_Controls_' + firstGroup
+    mc.matchTransform(tempGroup, armJoints[0][0], pos=True)
+    mc.move(0, 4, 0, tempGroup, relative=True)
 
+    #Add attribute and visibility with controls
+    mc.select(controlName)
+    mc.addAttr( longName='switchIKFK', niceName= 'Switch IK / FK' , attributeType="float", dv=0, max=1, min=0, h=False, k=True)
+    mc.connectAttr(f"{controlName}.switchIKFK", "FK_Arm_Controls_" + firstGroup + ".visibility", force=True)
+    reverseNode = mc.createNode('reverse', name="Arm_switchIKFK_REVERSE") 
+    mc.connectAttr(f"{controlName}.switchIKFK", f"{reverseNode}.inputX", force=True)
+    mc.connectAttr(f"{reverseNode}.outputX", "IK_Arm_Controls_" + firstGroup + ".visibility", force=True)
+
+
+    
+
+    #Disable button
     mc.button('armCreateButton', e=True, en=False)
     print(armJoints)
     util.select.setfocusMaya()

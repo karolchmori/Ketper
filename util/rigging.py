@@ -3,6 +3,9 @@ from . import create
 from . import naming
 from . import select
 import re
+import maya.api.OpenMaya as om2
+import maya.OpenMaya as om1
+import math
 
 orientAttr = ['jointOrientX','jointOrientY','jointOrientZ']
 
@@ -276,14 +279,45 @@ def createIkCTLJointList(IKHandle,poleVectorPos,groupStructure):
     #Modify position of PoleVector GRP
     groupRoot = poleVectorName + '_' + firstRoot
     mc.matchTransform(groupRoot, poleVectorPos, pos=True)
-
     mc.delete(poleVector)
 
     return listControls
 
-def createIKHandle(listJoints):
+def movePVControl(listJoints, control, distance):
+    
+    poleV = getVectorPos(listJoints[0], listJoints[1], listJoints[2], distance)
+    mc.cycleCheck(e=False)
+    tempConstraint = mc.parentConstraint(listJoints[1], control)
 
-    return 1
+    mc.delete(tempConstraint)
+    mc.cycleCheck(e=True)
+    
+    # Move the control to the new position and new rotation
+    mc.xform(control, worldSpace=True, translation=(poleV.x, poleV.y, poleV.z))
+    #mc.xform(control, worldSpace=True, rotation=((rot.x/math.pi*180.0), (rot.y/math.pi*180.0), (rot.z/math.pi*180.0)))
+
+def getVectorPos(rootPos, midPos, endPos, distance):
+
+    # Get the position of the triangle
+    startV = om2.MVector(getWorldPos(rootPos))
+    midV = om2.MVector(getWorldPos(midPos))
+    endV = om2.MVector(getWorldPos(endPos))
+
+    # Calculate the arrow vector (perpendicular) to positionate in the plane
+    line = endV - startV
+    point = midV - startV
+
+    scaleValue = (line * point) / (line * line)
+    projV = line * scaleValue + startV
+
+    poleV = (midV - projV).normal() * distance + midV
+
+    return poleV
+
+
+def getWorldPos(obj):
+    return mc.xform(obj, query=True, worldSpace=True, translation=True)
+
 
 def parentControlJoints(listControls, listJoints):
 
