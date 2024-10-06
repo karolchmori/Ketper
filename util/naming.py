@@ -1,13 +1,13 @@
 import re
 
-def modifyName(action, itemName, value):
+def modifyName(action, itemName, value , newValue):
     modifiedValue = ""
     if action == 'prefix':
         modifiedValue = addPrefix(itemName,value)
     elif action == 'suffix':
         modifiedValue = addSuffix(itemName,value)
-    elif action == 'delete':
-        modifiedValue = replaceText(itemName, value, '')
+    elif action == 'replace':
+        modifiedValue = replaceText(itemName, value, newValue)
 
     return modifiedValue
 

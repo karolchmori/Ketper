@@ -14,7 +14,7 @@ def createGroupStructure(text, mainName, firstParent):
 
     for i in range(1,len(splitText)):
         item = splitText[i].strip()
-        print(item)
+        #print(item)
         mc.group(em=True, name= mainName+'_'+item, parent=lastName)
         lastName = mainName+'_'+item
 
