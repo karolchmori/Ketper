@@ -61,13 +61,17 @@ def nullJointOrients(joint):
     mc.setAttr(joint + '.' + orientAttr[1], 0)
     mc.setAttr(joint + '.' + orientAttr[2], 0)
 
-def getPositionObjects(objectList):
+def getPositionList(objectList):
     positionList = []
     for item in objectList:
-        position = mc.xform(item, q=True, ws=True, t=True)
+        #position = mc.xform(item, q=True, ws=True, t=True)
+        position = getPosition(item)
         positionList.append(position)
 
     return positionList
+
+def getPosition(obj):
+    return mc.xform(obj, query=True, worldSpace=True, translation=True)
 
 def addInternalName(item, name):
     mc.addAttr(item, longName="internalName", dataType="string")
@@ -86,7 +90,6 @@ def delInternalNameByList(itemsList):
     for item in itemsList:
         delInternalName(item)
 
-    
 def getObjByInternalName(internalName):
     #Select original Arm Locators
     selectedObjects = mc.ls(dag=True, type='transform')
@@ -99,12 +102,7 @@ def getObjByInternalName(internalName):
             newObject = obj
             return newObject
 
-def displayLabelJoint(itemsList):
-    #Display Label
-    for item in itemsList:
-        mc.setAttr(f"{item}.type", 18) 
-        mc.setAttr(f"{item}.drawLabel", 1)
-        mc.setAttr(f"{item}.otherType", item, type='string')
+
 
 #region Arm Related
 
@@ -135,7 +133,7 @@ def createArmChain(locatorList):
  
     
     # Get position using NEW NAMES
-    positionList = getPositionObjects(newLocatorList)
+    positionList = getPositionList(newLocatorList)
 
     # Create NEW NAMES
     mainName = naming.modifyNameList('replace',newLocatorList,'_LOC', '')
@@ -310,13 +308,12 @@ def copyJoints(listJoints, newPrefix):
     return newList
 
 
-
 def getVectorPos(rootPos, midPos, endPos, distance):
 
     # Get the position of the triangle
-    startV = om2.MVector(getWorldPos(rootPos))
-    midV = om2.MVector(getWorldPos(midPos))
-    endV = om2.MVector(getWorldPos(endPos))
+    startV = om2.MVector(getPosition(rootPos))
+    midV = om2.MVector(getPosition(midPos))
+    endV = om2.MVector(getPosition(endPos))
 
     # Calculate the arrow vector (perpendicular) to positionate in the plane
     line = endV - startV
@@ -328,11 +325,6 @@ def getVectorPos(rootPos, midPos, endPos, distance):
     poleV = (midV - projV).normal() * distance + midV
 
     return poleV
-
-
-def getWorldPos(obj):
-    return mc.xform(obj, query=True, worldSpace=True, translation=True)
-
 
 
 def createPB(jointMain, jointA, jointB, trBool, rotBool):
@@ -350,6 +342,20 @@ def createPB(jointMain, jointA, jointB, trBool, rotBool):
 
     return node
 
+def displayLabelJoint(itemsList):
+    #Display Label
+    for item in itemsList:
+        mc.setAttr(f"{item}.type", 18) 
+        mc.setAttr(f"{item}.drawLabel", 1)
+        mc.setAttr(f"{item}.otherType", item, type='string')
+
+#Show orientation of selected joints
+def showJointOrientation():
+    selected_joints = mc.ls(selection = True, type = 'joint')
+
+    for joint in selected_joints:
+        mc.setAttr(f"{joint}.displayLocalAxis", 1)
+
 #endregion
 
 
@@ -363,13 +369,6 @@ def mirrorJointChain():
     for joint in selected_joints:
         mirrored_joint = mc.mirrorJoint(joint, mirrorYZ=True, searchReplace=('_L', '_R'))
 
-
-#Show orientation of selected joints
-def showJointOrientation():
-    selected_joints = mc.ls(selection = True, type = 'joint')
-
-    for joint in selected_joints:
-        mc.setAttr(f"{joint}.displayLocalAxis", 1)
 
 #Create a IK leg
 def createLegIK():
