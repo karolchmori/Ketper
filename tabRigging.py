@@ -56,8 +56,9 @@ def createArmJoints():
     armJoints.append(util.rigging.copyJoints(armJoints[0],'IK'))
     ikHandle = mc.ikHandle(n='IK_Arm_HDL', sj=armJoints[1][0], ee=armJoints[1][2], sol='ikRPsolver')[0] 
     listControls = util.rigging.createIkCTLJointList(ikHandle, armJoints[1][1] ,groupStructure)
+    
     mc.parentConstraint(listControls[0], ikHandle, mo=True, w=1)
-    mc.poleVectorConstraint( listControls[1], ikHandle)
+    mc.poleVectorConstraint(listControls[1], ikHandle)
     mc.orientConstraint( listControls[0], armJoints[1][2], mo=True)
 
     #Create groups and parent it. ALSO move PV Control to a position inside the plane
@@ -65,7 +66,26 @@ def createArmJoints():
     util.rigging.movePVControl(armJoints[1], 'IK_Arm_PV_' + firstGroup, 4)
     mc.parent('IK_Arm_' + firstGroup, lastGroup)
     mc.parent('IK_Arm_PV_' + firstGroup, lastGroup)
-    
+
+    # ----------------------------------------------------------------------
+    # --------------------------- STRETCH IK -------------------------------
+    # ----------------------------------------------------------------------
+    mc.select(listControls[0])
+    mc.addAttr(longName='upperLenMult', niceName= 'Upper Length Mult' , attributeType="float", dv=1, min=0.001, h=False, k=True)
+    mc.addAttr(longName='lowerLenMult', niceName= 'Lower Length Mult' , attributeType="float", dv=1, min=0.001, h=False, k=True)
+    mc.addAttr(longName='stretch', niceName= 'Stretch' , attributeType="float", dv=0, min=0, max=1, h=False, k=True)
+
+    listControls.append(util.rigging.createCTLJointList([armJoints[1][0]],groupStructure)[0])
+    tempName = util.naming.modifyName('replace',armJoints[1][0],'_JNT','')
+    tempRoot = tempName + '_' + firstGroup
+    mc.parent(tempRoot, lastGroup)
+    mc.parentConstraint(listControls[2], armJoints[1][0], sr=["x","z","y"], w=1)
+
+    # ------------------------------ NODES ----------------------------------
+    util.rigging.generateStretchNodes(armJoints, listControls)
+
+
+
     
     # ----------------------------------------------------------------------
     # --------------------------- CREATE FK ARM ----------------------------
@@ -110,6 +130,8 @@ def createArmJoints():
         pbNode = util.rigging.createPB(armJoints[0][i], armJoints[1][i], armJoints[2][i], True, True)
         mc.connectAttr(f"{controlName}.switchIKFK", f"{pbNode}.weight", force=True)
 
+    
+    #util.rigging.parentControlJoints(listControls,armJoints[2])
 
 
     #Disable button

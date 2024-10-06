@@ -181,6 +181,63 @@ def createArmChain(locatorList):
 
     return jointNames
 
+def generateStretchNodes(listJoints, listControls):
+    armLenDBT = mc.createNode('distanceBetween', n='IK_armLenDBT')
+    mc.connectAttr(listControls[2] + '.worldMatrix[0]', armLenDBT + '.inMatrix1')
+    mc.connectAttr(listControls[0] + '.worldMatrix[0]', armLenDBT + '.inMatrix2')
+
+    armRelDistanceFLM = mc.createNode('floatMath', n='IK_armRelDistanceFLM')
+    mc.setAttr(armRelDistanceFLM + '.operation', 3)
+    mc.connectAttr(armLenDBT + '.distance', armRelDistanceFLM + '.floatA')
+
+    upperLenMultMDL = mc.createNode('multDoubleLinear', n='IK_upperLenMultMDL')
+    lowerLenMultMDL = mc.createNode('multDoubleLinear', n='IK_lowerLenMultMDL')
+    mc.connectAttr(listControls[0] + '.upperLenMult', upperLenMultMDL + '.input1')
+    mc.connectAttr(listControls[0] + '.lowerLenMult', lowerLenMultMDL + '.input1')
+    distanceA = mc.getAttr(f"{listJoints[1][1]}.translateX")
+    distanceB = mc.getAttr(f"{listJoints[1][2]}.translateX")
+    mc.setAttr(upperLenMultMDL + '.input2', distanceA)
+    mc.setAttr(lowerLenMultMDL + '.input2', distanceB)
+
+    armDistanceRatioFLM = mc.createNode('floatMath', n='IK_armDistanceRatioFLM')
+    mc.setAttr(armDistanceRatioFLM + '.operation', 3)
+    mc.connectAttr(armRelDistanceFLM + '.outFloat', armDistanceRatioFLM + '.floatA')
+
+    armFullLenADL = mc.createNode('addDoubleLinear', n='IK_armFullLenADL')
+    mc.connectAttr(upperLenMultMDL + '.output', armFullLenADL + '.input1')
+    mc.connectAttr(lowerLenMultMDL + '.output', armFullLenADL + '.input2')
+    mc.connectAttr(armFullLenADL + '.output', armDistanceRatioFLM + '.floatB')
+
+    upperLenMultStrMDL = mc.createNode('multDoubleLinear', n='IK_upperLenMultStrMDL')
+    lowerLenMultStrMDL = mc.createNode('multDoubleLinear', n='IK_lowerLenMultStrMDL')
+    mc.connectAttr(upperLenMultMDL + '.output', upperLenMultStrMDL + '.input1')
+    mc.connectAttr(armDistanceRatioFLM + '.outFloat', upperLenMultStrMDL + '.input2')
+    mc.connectAttr(lowerLenMultMDL + '.output', lowerLenMultStrMDL + '.input1')
+    mc.connectAttr(armDistanceRatioFLM + '.outFloat', lowerLenMultStrMDL + '.input2')
+
+
+    upperLenStrBTA = mc.createNode('blendTwoAttr', n='IK_upperLenStrBTA')
+    lowerLenStrBTA = mc.createNode('blendTwoAttr', n='IK_lowerLenStrBTA')
+    mc.connectAttr(listControls[0] + '.stretch', upperLenStrBTA + '.attributesBlender')
+    mc.connectAttr(upperLenMultMDL + '.output', upperLenStrBTA + '.input[0]')
+    mc.connectAttr(upperLenMultStrMDL + '.output', upperLenStrBTA + '.input[1]')
+    mc.connectAttr(listControls[0] + '.stretch', lowerLenStrBTA + '.attributesBlender')
+    mc.connectAttr(lowerLenMultMDL + '.output', lowerLenStrBTA + '.input[0]')
+    mc.connectAttr(lowerLenMultStrMDL + '.output', lowerLenStrBTA + '.input[1]')
+
+    armStrCON = mc.createNode('condition', n='IK_armStrCON')
+    mc.setAttr(armStrCON + '.operation', 2)
+    mc.connectAttr(armRelDistanceFLM + '.outFloat', armStrCON + '.firstTerm')
+    mc.setAttr(armStrCON + '.secondTerm', 1.0)
+
+    mc.connectAttr(upperLenMultMDL + '.output', armStrCON + '.colorIfFalseR')
+    mc.connectAttr(lowerLenMultMDL + '.output', armStrCON + '.colorIfFalseG')
+    mc.connectAttr(upperLenStrBTA + '.output', armStrCON + '.colorIfTrueR')
+    mc.connectAttr(lowerLenStrBTA + '.output', armStrCON + '.colorIfTrueG')
+
+    mc.connectAttr(armStrCON + '.outColorR', listJoints[1][1] + '.translateX')
+    mc.connectAttr(armStrCON + '.outColorG', listJoints[1][2] + '.translateX')
+
 #endregion
 
 #region Controls
