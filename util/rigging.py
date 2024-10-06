@@ -287,7 +287,7 @@ def movePVControl(listJoints, control, distance):
     
     poleV = getVectorPos(listJoints[0], listJoints[1], listJoints[2], distance)
     mc.cycleCheck(e=False)
-    tempConstraint = mc.parentConstraint(listJoints[1], control)
+    tempConstraint = mc.parentConstraint(listJoints[1], control, st=["x","z","y"])
 
     mc.delete(tempConstraint)
     mc.cycleCheck(e=True)
