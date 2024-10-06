@@ -38,6 +38,13 @@ def createTextCurves(text):
     mc.select(curves)        
     result = combineObjects()
 
+    # Get the current pivot position and translate the object so that its pivot --> origin (0, 0, 0)
+    pivot = mc.xform(result, q=True, ws=True, rp=True)
+    
+    mc.move(-pivot[0], -pivot[1], -pivot[2], result, r=True)
+    mc.FreezeTransformations()
+    mc.delete(ch=1)
+    
     mainParent = mc.listRelatives(parent[0], parent=True)
     mc.delete(mainParent)
 
