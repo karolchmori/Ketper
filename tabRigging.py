@@ -82,7 +82,7 @@ def createArmJoints():
     mc.parentConstraint(listControls[2], armJoints[1][0], sr=["x","z","y"], w=1)
 
     # ------------------------------ NODES ----------------------------------
-    util.rigging.generateStretchNodes(armJoints, listControls)
+    util.rigging.generateIKStretchNodes(armJoints, listControls)
 
 
 

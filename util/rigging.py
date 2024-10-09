@@ -181,7 +181,7 @@ def createArmChain(locatorList):
 
     return jointNames
 
-def generateStretchNodes(listJoints, listControls):
+def generateIKStretchNodes(listJoints, listControls):
     armLenDBT = mc.createNode('distanceBetween', n='IK_armLenDBT')
     mc.connectAttr(listControls[2] + '.worldMatrix[0]', armLenDBT + '.inMatrix1')
     mc.connectAttr(listControls[0] + '.worldMatrix[0]', armLenDBT + '.inMatrix2')
