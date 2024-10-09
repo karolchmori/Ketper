@@ -55,11 +55,11 @@ def createArmJoints():
     
     armJoints.append(util.rigging.copyJoints(armJoints[0],'IK'))
     ikHandle = mc.ikHandle(n='IK_Arm_HDL', sj=armJoints[1][0], ee=armJoints[1][2], sol='ikRPsolver')[0] 
-    listControls = util.rigging.createIkCTLJointList(ikHandle, armJoints[1][1] ,groupStructure)
+    listControlsIK = util.rigging.createIkCTLJointList(ikHandle, armJoints[1][1] ,groupStructure)
     
-    mc.parentConstraint(listControls[0], ikHandle, mo=True, w=1)
-    mc.poleVectorConstraint(listControls[1], ikHandle)
-    mc.orientConstraint( listControls[0], armJoints[1][2], mo=True)
+    mc.parentConstraint(listControlsIK[0], ikHandle, mo=True, w=1)
+    mc.poleVectorConstraint(listControlsIK[1], ikHandle)
+    mc.orientConstraint( listControlsIK[0], armJoints[1][2], mo=True)
 
     #Create groups and parent it. ALSO move PV Control to a position inside the plane
     lastGroup = util.create.createGroupStructure(groupStructure,'IK_Arm_Controls',None)
@@ -70,35 +70,58 @@ def createArmJoints():
     # ----------------------------------------------------------------------
     # --------------------------- STRETCH IK -------------------------------
     # ----------------------------------------------------------------------
-    mc.select(listControls[0])
+    mc.select(listControlsIK[0])
     mc.addAttr(longName='upperLenMult', niceName= 'Upper Length Mult' , attributeType="float", dv=1, min=0.001, h=False, k=True)
     mc.addAttr(longName='lowerLenMult', niceName= 'Lower Length Mult' , attributeType="float", dv=1, min=0.001, h=False, k=True)
     mc.addAttr(longName='stretch', niceName= 'Stretch' , attributeType="float", dv=0, min=0, max=1, h=False, k=True)
 
-    listControls.append(util.rigging.createCTLJointList([armJoints[1][0]],groupStructure)[0])
+    listControlsIK.append(util.rigging.createCTLJointList([armJoints[1][0]],groupStructure)[0])
     tempName = util.naming.modifyName('replace',armJoints[1][0],'_JNT','')
     tempRoot = tempName + '_' + firstGroup
     mc.parent(tempRoot, lastGroup)
-    mc.parentConstraint(listControls[2], armJoints[1][0], sr=["x","z","y"], w=1)
+    mc.parentConstraint(listControlsIK[2], armJoints[1][0], sr=["x","z","y"], w=1)
 
     # ------------------------------ NODES ----------------------------------
-    util.rigging.generateIKStretchNodes(armJoints, listControls)
+    util.rigging.generateIKStretchNodes(armJoints, listControlsIK)
 
 
-
-    
     # ----------------------------------------------------------------------
     # --------------------------- CREATE FK ARM ----------------------------
     # ----------------------------------------------------------------------
 
     #Create FK ARM Chain with all Groups
     armJoints.append(util.rigging.copyJoints(armJoints[0],'FK'))
-    listControls = util.rigging.createCTLJointList(armJoints[2],groupStructure)
-    util.rigging.parentControlJoints(listControls,armJoints[2])
+    listControlsFK = util.rigging.createCTLJointList(armJoints[2],groupStructure)
+    util.rigging.parentControlJoints(listControlsFK,armJoints[2])
     tempName = util.naming.modifyName('replace',armJoints[2][0],'_JNT','')
     tempRoot = tempName + '_' + firstGroup
     lastGroup = util.create.createGroupStructure(groupStructure,'FK_Arm_Controls',None)
     mc.parent(tempRoot, lastGroup)
+
+    # ----------------------------------------------------------------------
+    # --------------------------- STRETCH FK -------------------------------
+    # ----------------------------------------------------------------------
+    mc.select(listControlsFK[0])
+    mc.addAttr(longName='stretch', niceName= 'Stretch' , attributeType="float", dv=1, min=0.001, h=False, k=True)
+    mc.select(listControlsFK[1])
+    mc.addAttr(longName='stretch', niceName= 'Stretch' , attributeType="float", dv=1, min=0.001, h=False, k=True)
+
+    upperLenMultMDL = mc.createNode('multDoubleLinear', n='FK_upperLenMultMDL')
+    lowerLenMultMDL = mc.createNode('multDoubleLinear', n='FK_lowerLenMultMDL')
+    mc.connectAttr(listControlsFK[0] + '.stretch', upperLenMultMDL + '.input1')
+    mc.connectAttr(listControlsFK[1] + '.stretch', lowerLenMultMDL + '.input1')
+    distanceA = mc.getAttr(f"{armJoints[2][1]}.translateX")
+    distanceB = mc.getAttr(f"{armJoints[2][2]}.translateX")
+    mc.setAttr(upperLenMultMDL + '.input2', distanceA)
+    mc.setAttr(lowerLenMultMDL + '.input2', distanceB)
+
+    fkShoulderGroup = util.naming.modifyName('replace',armJoints[2][1], '_JNT','')
+    fkElbowGroup = util.naming.modifyName('replace',armJoints[2][2], '_JNT','')
+
+
+    mc.connectAttr(upperLenMultMDL + '.output', fkShoulderGroup + '_' + firstGroup + '.translateX')
+    mc.connectAttr(lowerLenMultMDL + '.output', fkElbowGroup + '_' + firstGroup + '.translateX')
+
 
 
     # ----------------------------------------------------------------------
