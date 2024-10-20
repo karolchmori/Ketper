@@ -88,9 +88,10 @@ def createArmJoints():
     # ----------------------------------------------------------------------
     # ----------------------------- SOFT IK --------------------------------
     # ----------------------------------------------------------------------
+    #VERIFIED
     mc.select(listControlsIK[0]) 
     mc.addAttr(longName='soft', niceName= 'Soft' , attributeType="float", dv=0, min=0, max=1, h=False, k=True)
-
+    #VERIFIED
     # ------------------------------ NODES ----------------------------------
     
     util.rigging.generateIKSoftNodes(armJoints, listControlsIK, ikHandle, tempConstraint)

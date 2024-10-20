@@ -188,6 +188,7 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint):
     IKarmFullLenFLM = mc.createNode('floatMath', n='IK_armFullLenFLM')
     mc.setAttr(IKupperLenFLM + '.operation', 2) #MULTIPLY
     mc.setAttr(IKlowerLenFLM + '.operation', 2) #MULTIPLY
+
     mc.setAttr(IKarmFullLenFLM + '.operation', 0) #ADD
     mc.connectAttr(listControls[0] + '.upperLenMult', IKupperLenFLM + '.floatA')
     mc.connectAttr(listControls[0] + '.lowerLenMult', IKlowerLenFLM + '.floatA')
@@ -198,38 +199,44 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint):
     mc.setAttr(IKlowerLenFLM + '.floatB', translateB)
     mc.connectAttr(IKupperLenFLM + '.outFloat', IKarmFullLenFLM + '.floatA')
     mc.connectAttr(IKlowerLenFLM + '.outFloat', IKarmFullLenFLM + '.floatB')
+  
     IKarmDisToCTLDBT = mc.createNode('distanceBetween', n='IK_armDisToCTLDBT')
     mc.connectAttr(listControls[2] + '.worldMatrix[0]', IKarmDisToCTLDBT + '.inMatrix1')
     mc.connectAttr(listControls[0] + '.worldMatrix[0]', IKarmDisToCTLDBT + '.inMatrix2')
 
     IKarmDisToCTLNormalFML = mc.createNode('floatMath', n='IK_armDisToCTLNormalFML')
+    mc.setAttr(IKarmDisToCTLNormalFML + '.operation', 3) #DIVIDE
     mc.connectAttr(IKarmDisToCTLDBT + '.distance', IKarmDisToCTLNormalFML + '.floatA')
     mc.setAttr(IKarmDisToCTLNormalFML + '.floatB', 1) #materwalk_CTL.globalscale
-
+    
     #Getting the value for armSotfValueRMV.maxOutput
-    IKarmDisToCTLNormalLessFullLenFLM = mc.createNode('floatMath', n='IK_armDisToCTLNormalLessFullLenFLM')
-    mc.setAttr(IKarmDisToCTLNormalLessFullLenFLM + '.operation', 1) #SUBSTRACT
-    mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmDisToCTLNormalLessFullLenFLM + '.floatA')
-    mc.connectAttr(IKarmDisToCTLDBT + '.distance', IKarmDisToCTLNormalLessFullLenFLM + '.floatB')
+    valueA = mc.getAttr(IKarmFullLenFLM + '.outFloat')
+    valueB = mc.getAttr(IKarmDisToCTLDBT + '.distance')
+
+    #IKarmDisToCTLNormalLessFullLenFLM = mc.createNode('floatMath', n='IK_armDisToCTLNormalLessFullLenFLM')
+    #mc.setAttr(IKarmDisToCTLNormalLessFullLenFLM + '.operation', 1) #SUBSTRACT
+    #mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmDisToCTLNormalLessFullLenFLM + '.floatA')
+    #mc.connectAttr(IKarmDisToCTLDBT + '.distance', IKarmDisToCTLNormalLessFullLenFLM + '.floatB')
 
     IKarmSoftValueRMV = mc.createNode('remapValue', n='IK_armSoftValueRMV')
     mc.connectAttr(listControls[0] + '.soft', IKarmSoftValueRMV + '.inputValue')
     mc.setAttr(IKarmSoftValueRMV + '.outputMin', 0.001)
     mc.setAttr(IKarmSoftValueRMV + '.inputMax', 1.0)
-    mc.connectAttr(IKarmDisToCTLNormalLessFullLenFLM + '.outFloat', IKarmSoftValueRMV + '.outputMax')
-
+    mc.setAttr(IKarmSoftValueRMV + '.outputMax', valueA - valueB)
+    #mc.connectAttr(IKarmDisToCTLNormalLessFullLenFLM + '.outFloat', IKarmSoftValueRMV + '.outputMax')
+    
     IKarmSoftDisFLM = mc.createNode('floatMath', n='IK_armSoftDisFLM')
+    mc.setAttr(IKarmSoftDisFLM + '.operation', 1) #SUBSTRACT
     mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmSoftDisFLM + '.floatA')
     mc.connectAttr(IKarmSoftValueRMV + '.outValue', IKarmSoftDisFLM + '.floatB')
-
+    
     IKarmDisToCTLMinSDisFLM = mc.createNode('floatMath', n='IK_armDisToCTLMinSDisFLM')
     mc.setAttr(IKarmDisToCTLMinSDisFLM + '.operation', 1) #SUBSTRACT
     mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmDisToCTLMinSDisFLM + '.floatA')
     mc.connectAttr(IKarmSoftDisFLM + '.outFloat', IKarmDisToCTLMinSDisFLM + '.floatB')
-
-    #Check??
+    
     IKarmDisToCTLMinSDisDivSoftFLM = mc.createNode('floatMath', n='IK_armDisToCTLMinSDisDivSoftFLM')
-    mc.setAttr(IKarmDisToCTLMinSDisFLM + '.operation', 3) #DIVIDE
+    mc.setAttr(IKarmDisToCTLMinSDisDivSoftFLM + '.operation', 3) #DIVIDE
     mc.connectAttr(IKarmDisToCTLMinSDisFLM + '.outFloat', IKarmDisToCTLMinSDisDivSoftFLM + '.floatA')
     mc.connectAttr(IKarmSoftValueRMV + '.outValue', IKarmDisToCTLMinSDisDivSoftFLM + '.floatB')
 
@@ -239,35 +246,42 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint):
     mc.setAttr(IKminusCalculateFLM + '.floatB', -1.0)
 
     IKarmSoftEPowerFML = mc.createNode('floatMath', n='IK_armSoftEPowerFML')
-    mc.setAttr(IKarmSoftEPowerFML + '.operation', 8) #POWER
+    mc.setAttr(IKarmSoftEPowerFML + '.operation', 6) #POWER
     mc.setAttr(IKarmSoftEPowerFML + '.floatA', math.e)
     mc.connectAttr(IKminusCalculateFLM + '.outFloat', IKarmSoftEPowerFML + '.floatB')
-
+    
     IKarmSoftOneMinusEPowerFML = mc.createNode('floatMath', n='IK_armSoftOneMinusEPowerFML')
     mc.setAttr(IKarmSoftOneMinusEPowerFML + '.operation', 1) #SUBSTRACT
     mc.setAttr(IKarmSoftOneMinusEPowerFML + '.floatA', 1)
     mc.connectAttr(IKarmSoftEPowerFML + '.outFloat', IKarmSoftOneMinusEPowerFML + '.floatB')
-
+    
     IKarmCalculateSoftValueMultFML = mc.createNode('floatMath', n='IK_armCalculateSoftValueMultFML')
     mc.setAttr(IKarmCalculateSoftValueMultFML + '.operation', 2) #MULTIPLY
     mc.connectAttr(IKarmSoftValueRMV + '.outValue', IKarmCalculateSoftValueMultFML + '.floatA')
     mc.connectAttr(IKarmSoftOneMinusEPowerFML + '.outFloat', IKarmCalculateSoftValueMultFML + '.floatB')
 
+    # --------------------- RESULT OF THE FIRST FORMULA ------------------------------
     IKarmSoftConstantFML = mc.createNode('floatMath', n='IK_armSoftConstantFML')
     mc.setAttr(IKarmSoftConstantFML + '.operation', 0) #ADD
     mc.connectAttr(IKarmCalculateSoftValueMultFML + '.outFloat', IKarmSoftConstantFML + '.floatA')
     mc.connectAttr(IKarmSoftDisFLM + '.outFloat', IKarmSoftConstantFML + '.floatB')
-
+    # --------------------- RESULT OF THE FIRST FORMULA ------------------------------
+    
+    # --------------------- RESULT OF THE SECOND FORMULA ------------------------------
     IKarmSoftRatioFML = mc.createNode('floatMath', n='IK_armSoftRatioFML')
     mc.setAttr(IKarmSoftRatioFML + '.operation', 3) #DIVIDE
     mc.connectAttr(IKarmSoftConstantFML + '.outFloat', IKarmSoftRatioFML + '.floatA')
     mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmSoftRatioFML + '.floatB')
-
+    # --------------------- RESULT OF THE SECOND FORMULA ------------------------------
+    
+    # --------------------- RESULT OF THE THIRD FORMULA ------------------------------
     IKarmLenRatioFML = mc.createNode('floatMath', n='IK_armLenRatioFML')
     mc.setAttr(IKarmLenRatioFML + '.operation', 3) #DIVIDE
     mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmLenRatioFML + '.floatA')
     mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmLenRatioFML + '.floatB')
+    # --------------------- RESULT OF THE THIRD FORMULA ------------------------------
 
+    # --------------------- RESULT OF THE FOURTH FORMULA ------------------------------
     IKarmDisToCTLDivLenRatioFML = mc.createNode('floatMath', n='IK_armDisToCTLDivLenRatioFML')
     mc.setAttr(IKarmDisToCTLDivLenRatioFML + '.operation', 3) #DIVIDE
     mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmDisToCTLDivLenRatioFML + '.floatA')
@@ -277,8 +291,8 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint):
     mc.setAttr(IKarmSoftEffectorDisFML + '.operation', 2) #MULTIPLY
     mc.connectAttr(IKarmSoftRatioFML + '.outFloat', IKarmSoftEffectorDisFML + '.floatA')
     mc.connectAttr(IKarmDisToCTLDivLenRatioFML + '.outFloat', IKarmSoftEffectorDisFML + '.floatB')
+    # --------------------- RESULT OF THE FOURTH FORMULA ------------------------------
     
-
     IKarmSoftCON = mc.createNode('condition', n='IK_armSoftCON')
     mc.setAttr(IKarmSoftCON + '.operation', 2) #GREATER THAN
     mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmSoftCON + '.firstTerm')
@@ -286,11 +300,13 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint):
     mc.connectAttr(IKarmSoftEffectorDisFML + '.outFloat', IKarmSoftCON + '.colorIfTrueR')
     mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmSoftCON + '.colorIfFalseR')
 
+    
     lastGroup = create.createGroupStructure('OFF;TRN','IK_armSoft', None)
     mainGroup = 'IK_armSoft_OFF'
-    mc.matchTransform(mainGroup, listJoints[1][1], pos=True)
+    mc.matchTransform(mainGroup, listJoints[1][0])
+    
     mc.aimConstraint(listControls[0], mainGroup, o=[0,0,0], aim=[1,0,0], wut="none")
-
+    
     mc.connectAttr(IKarmSoftCON + '.outColorR', lastGroup + '.translateX')
 
     mc.cycleCheck(e=False)
@@ -298,7 +314,11 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint):
     mc.cycleCheck(e=True)
 
     mc.parentConstraint(lastGroup, ikHandle, mo=True, sr=["x","z","y"], w=1) #Only translate
-    #mc.pointConstraint(listControls[1], lastGroup)
+    
+    #VERIFIED
+    mc.pointConstraint(listControls[2], mainGroup)
+
+    #Modify the effector    
 
 
 def generateIKStretchNodes(listJoints, listControls):
