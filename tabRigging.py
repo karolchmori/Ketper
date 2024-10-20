@@ -1,6 +1,7 @@
 import maya.cmds as mc
 import ElementsUI as elUI
 import util
+import math
 
 armLocators = []
 armJoints = []
@@ -57,7 +58,7 @@ def createArmJoints():
     ikHandle = mc.ikHandle(n='IK_Arm_HDL', sj=armJoints[1][0], ee=armJoints[1][2], sol='ikRPsolver')[0] 
     listControlsIK = util.rigging.createIkCTLJointList(ikHandle, armJoints[1][1] ,groupStructure)
     
-    mc.parentConstraint(listControlsIK[0], ikHandle, mo=True, w=1)
+    tempConstraint = mc.parentConstraint(listControlsIK[0], ikHandle, mo=True, w=1)
     mc.poleVectorConstraint(listControlsIK[1], ikHandle)
     mc.orientConstraint( listControlsIK[0], armJoints[1][2], mo=True)
 
@@ -87,59 +88,13 @@ def createArmJoints():
     # ----------------------------------------------------------------------
     # ----------------------------- SOFT IK --------------------------------
     # ----------------------------------------------------------------------
-    mc.select(listControlsIK[0])
+    mc.select(listControlsIK[0]) 
     mc.addAttr(longName='soft', niceName= 'Soft' , attributeType="float", dv=0, min=0, max=1, h=False, k=True)
 
     # ------------------------------ NODES ----------------------------------
-    IKupperLenFLM = mc.createNode('floatMath', n='IK_upperLenFLM')
-    IKlowerLenFLM = mc.createNode('floatMath', n='IK_lowerLenFLM')
-    IKarmFullLenFLM = mc.createNode('floatMath', n='IK_armFullLenFLM')
-    mc.setAttr(IKupperLenFLM + '.operation', 2) #MULTIPLY
-    mc.setAttr(IKlowerLenFLM + '.operation', 2) #MULTIPLY
-    mc.setAttr(IKarmFullLenFLM + '.operation', 0) #ADD
-    mc.connectAttr(listControlsIK[0] + '.upperLenMult', IKupperLenFLM + '.floatA')
-    mc.connectAttr(listControlsIK[0] + '.lowerLenMult', IKlowerLenFLM + '.floatA')
-
-    translateA = mc.getAttr(f"{armJoints[1][1]}.translateX")
-    translateB = mc.getAttr(f"{armJoints[1][2]}.translateX")
-    mc.setAttr(IKupperLenFLM + '.floatB', translateA)
-    mc.setAttr(IKlowerLenFLM + '.floatB', translateB)
-    mc.connectAttr(IKupperLenFLM + '.outFloat', IKarmFullLenFLM + '.floatA')
-    mc.connectAttr(IKlowerLenFLM + '.outFloat', IKarmFullLenFLM + '.floatB')
-    IKarmDisToCTLDBT = mc.createNode('distanceBetween', n='IK_armDisToCTLDBT')
-    mc.connectAttr(listControlsIK[2] + '.worldMatrix[0]', IKarmDisToCTLDBT + '.inMatrix1')
-    mc.connectAttr(listControlsIK[0] + '.worldMatrix[0]', IKarmDisToCTLDBT + '.inMatrix2')
-
-    IKarmDisToCTLNormalFML = mc.createNode('floatMath', n='IK_armDisToCTLNormalFML')
-    mc.connectAttr(IKarmDisToCTLDBT + '.distance', IKarmDisToCTLNormalFML + '.floatA')
-    mc.setAttr(IKarmDisToCTLNormalFML + '.floatB', 1) #materwalk_CTL.globalscale
-
-    #Getting the value for armSotfValueRMV.maxOutput
-    IKarmDisToCTLNormalLessFullLenFLM = mc.createNode('floatMath', n='IK_armDisToCTLNormalLessFullLenFLM')
-    mc.setAttr(IKarmDisToCTLNormalLessFullLenFLM + '.operation', 1) #SUBSTRACT
-    mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmDisToCTLNormalLessFullLenFLM + '.floatA')
-    mc.connectAttr(IKarmDisToCTLDBT + '.distance', IKarmDisToCTLNormalLessFullLenFLM + '.floatB')
-
-    IKarmSoftValueRMV = mc.createNode('remapValue', n='IK_armSoftValueRMV')
-    mc.connectAttr(listControlsIK[0] + '.soft', IKarmSoftValueRMV + '.inputValue')
-    mc.setAttr(IKarmSoftValueRMV + '.outputMin', 0.001)
-    mc.setAttr(IKarmSoftValueRMV + '.inputMax', 1.0)
-    mc.connectAttr(IKarmDisToCTLNormalLessFullLenFLM + '.outFloat', IKarmSoftValueRMV + '.outputMax')
-
-    IKarmSoftDisFLM = mc.createNode('floatMath', n='IK_armSoftDisFLM')
-    mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmSoftDisFLM + '.floatA')
-    mc.connectAttr(IKarmSoftValueRMV + '.outValue', IKarmSoftDisFLM + '.floatB')
-
-    IKarmDisToCTLMinSDisFLM = mc.createNode('floatMath', n='IK_armDisToCTLMinSDisFLM')
-    mc.setAttr(IKarmDisToCTLMinSDisFLM + '.operation', 1) #SUBSTRACT
-    mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmDisToCTLMinSDisFLM + '.floatA')
-    mc.connectAttr(IKarmSoftDisFLM + '.outFloat', IKarmDisToCTLMinSDisFLM + '.floatB')
-
-    IKarmDisToCTLMinSDisDivSoftFLM = mc.createNode('floatMath', n='IK_armDisToCTLMinSDisDivSoftFLM')
-    mc.setAttr(IKarmDisToCTLMinSDisFLM + '.operation', 3) #DIVIDE
-    mc.connectAttr(IKarmDisToCTLMinSDisFLM + '.outFloat', IKarmDisToCTLMinSDisDivSoftFLM + '.floatA')
-    mc.connectAttr(IKarmSoftValueRMV + '.outValue', IKarmDisToCTLMinSDisDivSoftFLM + '.floatB')
-
+    
+    util.rigging.generateIKSoftNodes(armJoints, listControlsIK, ikHandle, tempConstraint)
+    
 
 
 

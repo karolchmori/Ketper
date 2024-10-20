@@ -181,6 +181,126 @@ def createArmChain(locatorList):
 
     return jointNames
 
+def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint):
+
+    IKupperLenFLM = mc.createNode('floatMath', n='IK_upperLenFLM')
+    IKlowerLenFLM = mc.createNode('floatMath', n='IK_lowerLenFLM')
+    IKarmFullLenFLM = mc.createNode('floatMath', n='IK_armFullLenFLM')
+    mc.setAttr(IKupperLenFLM + '.operation', 2) #MULTIPLY
+    mc.setAttr(IKlowerLenFLM + '.operation', 2) #MULTIPLY
+    mc.setAttr(IKarmFullLenFLM + '.operation', 0) #ADD
+    mc.connectAttr(listControls[0] + '.upperLenMult', IKupperLenFLM + '.floatA')
+    mc.connectAttr(listControls[0] + '.lowerLenMult', IKlowerLenFLM + '.floatA')
+
+    translateA = mc.getAttr(f"{listJoints[1][1]}.translateX")
+    translateB = mc.getAttr(f"{listJoints[1][2]}.translateX")
+    mc.setAttr(IKupperLenFLM + '.floatB', translateA)
+    mc.setAttr(IKlowerLenFLM + '.floatB', translateB)
+    mc.connectAttr(IKupperLenFLM + '.outFloat', IKarmFullLenFLM + '.floatA')
+    mc.connectAttr(IKlowerLenFLM + '.outFloat', IKarmFullLenFLM + '.floatB')
+    IKarmDisToCTLDBT = mc.createNode('distanceBetween', n='IK_armDisToCTLDBT')
+    mc.connectAttr(listControls[2] + '.worldMatrix[0]', IKarmDisToCTLDBT + '.inMatrix1')
+    mc.connectAttr(listControls[0] + '.worldMatrix[0]', IKarmDisToCTLDBT + '.inMatrix2')
+
+    IKarmDisToCTLNormalFML = mc.createNode('floatMath', n='IK_armDisToCTLNormalFML')
+    mc.connectAttr(IKarmDisToCTLDBT + '.distance', IKarmDisToCTLNormalFML + '.floatA')
+    mc.setAttr(IKarmDisToCTLNormalFML + '.floatB', 1) #materwalk_CTL.globalscale
+
+    #Getting the value for armSotfValueRMV.maxOutput
+    IKarmDisToCTLNormalLessFullLenFLM = mc.createNode('floatMath', n='IK_armDisToCTLNormalLessFullLenFLM')
+    mc.setAttr(IKarmDisToCTLNormalLessFullLenFLM + '.operation', 1) #SUBSTRACT
+    mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmDisToCTLNormalLessFullLenFLM + '.floatA')
+    mc.connectAttr(IKarmDisToCTLDBT + '.distance', IKarmDisToCTLNormalLessFullLenFLM + '.floatB')
+
+    IKarmSoftValueRMV = mc.createNode('remapValue', n='IK_armSoftValueRMV')
+    mc.connectAttr(listControls[0] + '.soft', IKarmSoftValueRMV + '.inputValue')
+    mc.setAttr(IKarmSoftValueRMV + '.outputMin', 0.001)
+    mc.setAttr(IKarmSoftValueRMV + '.inputMax', 1.0)
+    mc.connectAttr(IKarmDisToCTLNormalLessFullLenFLM + '.outFloat', IKarmSoftValueRMV + '.outputMax')
+
+    IKarmSoftDisFLM = mc.createNode('floatMath', n='IK_armSoftDisFLM')
+    mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmSoftDisFLM + '.floatA')
+    mc.connectAttr(IKarmSoftValueRMV + '.outValue', IKarmSoftDisFLM + '.floatB')
+
+    IKarmDisToCTLMinSDisFLM = mc.createNode('floatMath', n='IK_armDisToCTLMinSDisFLM')
+    mc.setAttr(IKarmDisToCTLMinSDisFLM + '.operation', 1) #SUBSTRACT
+    mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmDisToCTLMinSDisFLM + '.floatA')
+    mc.connectAttr(IKarmSoftDisFLM + '.outFloat', IKarmDisToCTLMinSDisFLM + '.floatB')
+
+    #Check??
+    IKarmDisToCTLMinSDisDivSoftFLM = mc.createNode('floatMath', n='IK_armDisToCTLMinSDisDivSoftFLM')
+    mc.setAttr(IKarmDisToCTLMinSDisFLM + '.operation', 3) #DIVIDE
+    mc.connectAttr(IKarmDisToCTLMinSDisFLM + '.outFloat', IKarmDisToCTLMinSDisDivSoftFLM + '.floatA')
+    mc.connectAttr(IKarmSoftValueRMV + '.outValue', IKarmDisToCTLMinSDisDivSoftFLM + '.floatB')
+
+    IKminusCalculateFLM = mc.createNode('floatMath', n='IK_minusCalculateFLM')
+    mc.setAttr(IKminusCalculateFLM + '.operation', 2) #MULTIPLY
+    mc.connectAttr(IKarmDisToCTLMinSDisDivSoftFLM + '.outFloat', IKminusCalculateFLM + '.floatA')
+    mc.setAttr(IKminusCalculateFLM + '.floatB', -1.0)
+
+    IKarmSoftEPowerFML = mc.createNode('floatMath', n='IK_armSoftEPowerFML')
+    mc.setAttr(IKarmSoftEPowerFML + '.operation', 8) #POWER
+    mc.setAttr(IKarmSoftEPowerFML + '.floatA', math.e)
+    mc.connectAttr(IKminusCalculateFLM + '.outFloat', IKarmSoftEPowerFML + '.floatB')
+
+    IKarmSoftOneMinusEPowerFML = mc.createNode('floatMath', n='IK_armSoftOneMinusEPowerFML')
+    mc.setAttr(IKarmSoftOneMinusEPowerFML + '.operation', 1) #SUBSTRACT
+    mc.setAttr(IKarmSoftOneMinusEPowerFML + '.floatA', 1)
+    mc.connectAttr(IKarmSoftEPowerFML + '.outFloat', IKarmSoftOneMinusEPowerFML + '.floatB')
+
+    IKarmCalculateSoftValueMultFML = mc.createNode('floatMath', n='IK_armCalculateSoftValueMultFML')
+    mc.setAttr(IKarmCalculateSoftValueMultFML + '.operation', 2) #MULTIPLY
+    mc.connectAttr(IKarmSoftValueRMV + '.outValue', IKarmCalculateSoftValueMultFML + '.floatA')
+    mc.connectAttr(IKarmSoftOneMinusEPowerFML + '.outFloat', IKarmCalculateSoftValueMultFML + '.floatB')
+
+    IKarmSoftConstantFML = mc.createNode('floatMath', n='IK_armSoftConstantFML')
+    mc.setAttr(IKarmSoftConstantFML + '.operation', 0) #ADD
+    mc.connectAttr(IKarmCalculateSoftValueMultFML + '.outFloat', IKarmSoftConstantFML + '.floatA')
+    mc.connectAttr(IKarmSoftDisFLM + '.outFloat', IKarmSoftConstantFML + '.floatB')
+
+    IKarmSoftRatioFML = mc.createNode('floatMath', n='IK_armSoftRatioFML')
+    mc.setAttr(IKarmSoftRatioFML + '.operation', 3) #DIVIDE
+    mc.connectAttr(IKarmSoftConstantFML + '.outFloat', IKarmSoftRatioFML + '.floatA')
+    mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmSoftRatioFML + '.floatB')
+
+    IKarmLenRatioFML = mc.createNode('floatMath', n='IK_armLenRatioFML')
+    mc.setAttr(IKarmLenRatioFML + '.operation', 3) #DIVIDE
+    mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmLenRatioFML + '.floatA')
+    mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmLenRatioFML + '.floatB')
+
+    IKarmDisToCTLDivLenRatioFML = mc.createNode('floatMath', n='IK_armDisToCTLDivLenRatioFML')
+    mc.setAttr(IKarmDisToCTLDivLenRatioFML + '.operation', 3) #DIVIDE
+    mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmDisToCTLDivLenRatioFML + '.floatA')
+    mc.connectAttr(IKarmLenRatioFML + '.outFloat', IKarmDisToCTLDivLenRatioFML + '.floatB')
+
+    IKarmSoftEffectorDisFML = mc.createNode('floatMath', n='IK_armSoftEffectorDisFML')
+    mc.setAttr(IKarmSoftEffectorDisFML + '.operation', 2) #MULTIPLY
+    mc.connectAttr(IKarmSoftRatioFML + '.outFloat', IKarmSoftEffectorDisFML + '.floatA')
+    mc.connectAttr(IKarmDisToCTLDivLenRatioFML + '.outFloat', IKarmSoftEffectorDisFML + '.floatB')
+    
+
+    IKarmSoftCON = mc.createNode('condition', n='IK_armSoftCON')
+    mc.setAttr(IKarmSoftCON + '.operation', 2) #GREATER THAN
+    mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmSoftCON + '.firstTerm')
+    mc.connectAttr(IKarmSoftDisFLM + '.outFloat', IKarmSoftCON + '.secondTerm')
+    mc.connectAttr(IKarmSoftEffectorDisFML + '.outFloat', IKarmSoftCON + '.colorIfTrueR')
+    mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmSoftCON + '.colorIfFalseR')
+
+    lastGroup = create.createGroupStructure('OFF;TRN','IK_armSoft', None)
+    mainGroup = 'IK_armSoft_OFF'
+    mc.matchTransform(mainGroup, listJoints[1][1], pos=True)
+    mc.aimConstraint(listControls[0], mainGroup, o=[0,0,0], aim=[1,0,0], wut="none")
+
+    mc.connectAttr(IKarmSoftCON + '.outColorR', lastGroup + '.translateX')
+
+    mc.cycleCheck(e=False)
+    mc.delete(tempConstraint) #Will create another parent later
+    mc.cycleCheck(e=True)
+
+    mc.parentConstraint(lastGroup, ikHandle, mo=True, sr=["x","z","y"], w=1) #Only translate
+    #mc.pointConstraint(listControls[1], lastGroup)
+
+
 def generateIKStretchNodes(listJoints, listControls):
     armLenDBT = mc.createNode('distanceBetween', n='IK_armLenDBT')
     mc.connectAttr(listControls[2] + '.worldMatrix[0]', armLenDBT + '.inMatrix1')
