@@ -72,9 +72,9 @@ def createArmJoints():
     # --------------------------- STRETCH IK -------------------------------
     # ----------------------------------------------------------------------
     mc.select(listControlsIK[0])
-    mc.addAttr(longName='upperLenMult', niceName= 'Upper Length Mult' , attributeType="float", dv=1, min=0.001, h=False, k=True)
-    mc.addAttr(longName='lowerLenMult', niceName= 'Lower Length Mult' , attributeType="float", dv=1, min=0.001, h=False, k=True)
-    mc.addAttr(longName='stretch', niceName= 'Stretch' , attributeType="float", dv=0, min=0, max=1, h=False, k=True)
+    mc.addAttr(longName='upperLenMult', niceName= 'Upper Length Mult', attributeType="float", dv=1, min=0.001, h=False, k=True)
+    mc.addAttr(longName='lowerLenMult', niceName= 'Lower Length Mult', attributeType="float", dv=1, min=0.001, h=False, k=True)
+    mc.addAttr(longName='stretch', niceName= 'Stretch', attributeType="float", dv=0, min=0, max=1, h=False, k=True)
 
     listControlsIK.append(util.rigging.createCTLJointList([armJoints[1][0]],groupStructure)[0])
     tempName = util.naming.modifyName('replace',armJoints[1][0],'_JNT','')
@@ -86,18 +86,23 @@ def createArmJoints():
     IKarmStrCON = util.rigging.generateIKStretchNodes(armJoints, listControlsIK)
 
     # ----------------------------------------------------------------------
-    # ----------------------------- SOFT IK --------------------------------
+    # ----------------------------- SOFT IK -------------------------------- # DEPENDS FROM STRETCH IK 
     # ----------------------------------------------------------------------
-    #VERIFIED
     mc.select(listControlsIK[0]) 
     mc.addAttr(longName='soft', niceName= 'Soft' , attributeType="float", dv=0, min=0, max=1, h=False, k=True)
-    #VERIFIED
+    
     # ------------------------------ NODES ----------------------------------
     
-    util.rigging.generateIKSoftNodes(armJoints, listControlsIK, ikHandle, tempConstraint, IKarmStrCON)
+    IKarmSoftCON, lastGroup = util.rigging.generateIKSoftNodes(armJoints, listControlsIK, ikHandle, tempConstraint, IKarmStrCON)
     
+    # ----------------------------------------------------------------------
+    # ----------------------------- PV PIN -------------------------------- # DEPENDS FROM SOFT IK
+    # ----------------------------------------------------------------------
+    mc.select(listControlsIK[1])
+    mc.addAttr(longName='pin', niceName= 'Pin', attributeType="float", dv=0, min=0, max=1, h=False, k=True)
 
-
+    util.rigging.generateIKPVPinNodes(armJoints, listControlsIK, lastGroup, IKarmSoftCON)
+    
 
     # ----------------------------------------------------------------------
     # --------------------------- CREATE FK ARM ----------------------------

@@ -181,6 +181,33 @@ def createArmChain(locatorList):
 
     return jointNames
 
+def generateIKPVPinNodes(listJoints, listControls,lastGroup, IKarmSoftCON):
+    IKarmUpperPinDBT = mc.createNode('distanceBetween', n='IK_armUpperPinDBT')
+    mc.connectAttr(listControls[2] + '.worldMatrix[0]', IKarmUpperPinDBT + '.inMatrix1')
+    mc.connectAttr(listControls[1] + '.worldMatrix[0]', IKarmUpperPinDBT + '.inMatrix2')
+
+    IKarmLowerPinDBT = mc.createNode('distanceBetween', n='IK_armLowerPinDBT')
+    mc.connectAttr(listControls[1] + '.worldMatrix[0]', IKarmLowerPinDBT + '.inMatrix1')
+    mc.connectAttr(lastGroup + '.worldMatrix[0]', IKarmLowerPinDBT + '.inMatrix2')
+
+    IKarmUpperPinBTA = mc.createNode('blendTwoAttr', n='IK_armUpperPinBTA')
+    mc.connectAttr(listControls[1] + '.pin', IKarmUpperPinBTA + '.attributesBlender')
+    mc.connectAttr(IKarmSoftCON + '.outColorG', IKarmUpperPinBTA + '.input[0]')
+    mc.connectAttr(IKarmUpperPinDBT + '.distance', IKarmUpperPinBTA + '.input[1]')
+
+    IKarmLowerPinBTA = mc.createNode('blendTwoAttr', n='IK_armUpperPinBTA')
+    mc.connectAttr(listControls[1] + '.pin', IKarmLowerPinBTA + '.attributesBlender')
+    mc.connectAttr(IKarmSoftCON + '.outColorB', IKarmLowerPinBTA + '.input[0]')
+    mc.connectAttr(IKarmLowerPinDBT + '.distance', IKarmLowerPinBTA + '.input[1]')
+
+    mc.disconnectAttr(IKarmSoftCON + '.outColorG', listJoints[1][1] + '.translateX')
+    mc.disconnectAttr(IKarmSoftCON + '.outColorB', listJoints[1][2] + '.translateX')
+
+    mc.connectAttr(IKarmUpperPinBTA + '.output', listJoints[1][1] + '.translateX')
+    mc.connectAttr(IKarmLowerPinBTA + '.output', listJoints[1][2] + '.translateX')
+
+    
+
 def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint, IKarmStrCON):
 
     IKupperLenFLM = mc.createNode('floatMath', n='IK_upperLenFLM')
@@ -304,6 +331,8 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint, IKar
 
     mc.connectAttr(IKarmSoftCON + '.outColorG', listJoints[1][1] + '.translateX')
     mc.connectAttr(IKarmSoftCON + '.outColorB', listJoints[1][2] + '.translateX')
+
+    return IKarmSoftCON, lastGroup
 
 
 def generateIKStretchNodes(listJoints, listControls):
