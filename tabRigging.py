@@ -83,7 +83,7 @@ def createArmJoints():
     mc.parentConstraint(listControlsIK[2], armJoints[1][0], sr=["x","z","y"], w=1)
 
     # ------------------------------ NODES ----------------------------------
-    util.rigging.generateIKStretchNodes(armJoints, listControlsIK)
+    IKarmStrCON = util.rigging.generateIKStretchNodes(armJoints, listControlsIK)
 
     # ----------------------------------------------------------------------
     # ----------------------------- SOFT IK --------------------------------
@@ -94,7 +94,7 @@ def createArmJoints():
     #VERIFIED
     # ------------------------------ NODES ----------------------------------
     
-    util.rigging.generateIKSoftNodes(armJoints, listControlsIK, ikHandle, tempConstraint)
+    util.rigging.generateIKSoftNodes(armJoints, listControlsIK, ikHandle, tempConstraint, IKarmStrCON)
     
 
 
