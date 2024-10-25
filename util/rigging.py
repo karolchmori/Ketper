@@ -225,10 +225,11 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint):
     mc.setAttr(IKarmSoftValueRMV + '.outputMax', valueA - valueB)
     #mc.connectAttr(IKarmDisToCTLNormalLessFullLenFLM + '.outFloat', IKarmSoftValueRMV + '.outputMax')
     
-    IKarmSoftDisFLM = mc.createNode('floatMath', n='IK_armSoftDisFLM')
+    IKarmSoftDisFLM = floatMConnect('IK_armSoftDisFLM', 1, IKarmFullLenFLM + '.outFloat', IKarmSoftValueRMV + '.outValue')
+    '''IKarmSoftDisFLM = mc.createNode('floatMath', n='IK_armSoftDisFLM')
     mc.setAttr(IKarmSoftDisFLM + '.operation', 1) #SUBSTRACT
     mc.connectAttr(IKarmFullLenFLM + '.outFloat', IKarmSoftDisFLM + '.floatA')
-    mc.connectAttr(IKarmSoftValueRMV + '.outValue', IKarmSoftDisFLM + '.floatB')
+    mc.connectAttr(IKarmSoftValueRMV + '.outValue', IKarmSoftDisFLM + '.floatB')'''
     
     IKarmDisToCTLMinSDisFLM = mc.createNode('floatMath', n='IK_armDisToCTLMinSDisFLM')
     mc.setAttr(IKarmDisToCTLMinSDisFLM + '.operation', 1) #SUBSTRACT
@@ -318,7 +319,14 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint):
     #VERIFIED
     mc.pointConstraint(listControls[2], mainGroup)
 
-    #Modify the effector    
+    #Modify the effector
+    ikSolver = mc.listConnections(ikHandle, type='ikRPsolver')[0]
+    mc.setAttr(f"{ikSolver}.tolerance", 0.0000001)
+
+
+    # -------------- SOFT TOLERANCE ----------------------------
+
+
 
 
 def generateIKStretchNodes(listJoints, listControls):
@@ -553,6 +561,13 @@ def showJointOrientation():
     for joint in selected_joints:
         mc.setAttr(f"{joint}.displayLocalAxis", 1)
 
+
+def floatMConnect(name, operation, floatA, floatB):
+    node = mc.createNode('floatMath', n=name)
+    mc.setAttr(node + '.operation', operation)
+    mc.connectAttr(floatA, node + '.floatA')
+    mc.connectAttr(floatB, node + '.floatB')
+    return node
 #endregion
 
 
