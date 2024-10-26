@@ -47,9 +47,10 @@ def createArmJoints():
     groupStructure = 'GRP;ANIM;OFFSET'
     firstGroup = groupStructure.split(';')[0]
 
-    stretch = False
-    soft = False
-    pvPin = False
+    stretch = True
+    soft = True
+    pvPin = True
+    curvature = True
 
     #Create arms and duplicate to IK and FK
     armJoints.append(util.rigging.createArmChain(armLocators))
@@ -182,9 +183,10 @@ def createArmJoints():
     # ----------------------------------------------------------------------
     # ---------------------------- CURVATURE ------------------------------- 
     # ----------------------------------------------------------------------
-    mc.select(controlName)
-    mc.addAttr(longName='curvature', niceName= 'Curvature' , attributeType="float", dv=0, max=1, min=0, h=False, k=True)
-    util.rigging.generateCurvatureNodes(armJoints, controlName)
+    if curvature:
+        mc.select(controlName)
+        mc.addAttr(longName='curvature', niceName= 'Curvature' , attributeType="float", dv=0, max=1, min=0, h=False, k=True)
+        util.rigging.generateCurvatureNodes(armJoints, controlName)
 
     
 

@@ -266,7 +266,7 @@ def generateCurvatureNodes(listJoints, controlName):
     mc.parent(curvatureLowerLOC, curvatureMidLOC)
 
     mc.delete(curve1Linear,curveBezier)
-
+    mc.group(curve2Degree, curvatureMidLOC, curvatureUpperCVLOC, curvatureLowerCVLOC, n= 'armCurvature_GRP')
 
 
 def generateIKPVPinNodes(listJoints, listControls,lastGroup, IKarmSoftCON):
