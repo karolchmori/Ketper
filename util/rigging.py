@@ -1,4 +1,5 @@
 import maya.cmds as mc
+import maya.mel as mel
 from . import create
 from . import naming
 from . import select
@@ -180,6 +181,93 @@ def createArmChain(locatorList):
     nullJointOrients(jointNames[2])
 
     return jointNames
+
+def generateCurvatureNodes(listJoints, controlName):
+    positionsJoints = []
+    
+    # Get world position of each joint
+    for joint in listJoints[0]:
+        pos = mc.xform(joint, query=True, worldSpace=True, translation=True)
+        positionsJoints.append(pos)
+
+    # Create the EP Curve through these positions
+    curve1Linear = mc.curve(n='armLinear_CRV', d=1, ep=positionsJoints) 
+    
+    #Duplicate and create a Bezier curve
+    curveBezier = mc.duplicate(curve1Linear, renameChildren=True)[0]
+    mel.eval("nurbsCurveToBezier");
+    
+    curveBezier = mc.rename(curveBezier, 'armBezier_CRV')
+    mc.select(curveBezier+ ".cv[0]", curveBezier+ ".cv[6]")
+    mc.bezierAnchorPreset(p=2)
+    mc.select(curveBezier+ ".cv[3]")
+    mc.bezierAnchorPreset(p=0)
+    
+    curve2Degree = mc.duplicate(curve1Linear, renameChildren=True)[0]
+    curve2Degree = mc.rename(curve2Degree, 'armDegree2_CRV')
+       
+    mc.rebuildCurve(curve2Degree, s=2, d=2, kr=0, kep=True, kt=False, kcp=False)
+    curve2DegreeShape = mc.listRelatives(curve2Degree, shapes=True)[0]
+     
+    curvatureUpperLOC = mc.spaceLocator(n='curvatureUpper_LOC')[0]
+    cv_positionA = mc.xform(curveBezier + ".cv[2]", query=True, worldSpace=True, translation=True)
+    mc.xform(curvatureUpperLOC, worldSpace=True, translation=cv_positionA)
+    curvatureLowerLOC = mc.spaceLocator(n='curvatureLower_LOC')[0]
+    cv_positionB = mc.xform(curveBezier + ".cv[4]", query=True, worldSpace=True, translation=True)
+    mc.xform(curvatureLowerLOC, worldSpace=True, translation=cv_positionB)
+    curvatureMidLOC = mc.spaceLocator(n='curvatureMid_LOC')[0]
+    cv_positionC = mc.xform(curveBezier + ".cv[3]", query=True, worldSpace=True, translation=True)
+    mc.xform(curvatureMidLOC, worldSpace=True, translation=cv_positionC)
+    
+    curvatureUpperCVLOC = mc.duplicate(curvatureUpperLOC)
+    curvatureUpperCVLOC = mc.rename(curvatureUpperCVLOC, 'curvatureUpperCV_LOC')
+    curvatureLowerCVLOC = mc.duplicate(curvatureLowerLOC)
+    curvatureLowerCVLOC = mc.rename(curvatureLowerCVLOC, 'curvatureLowerCV_LOC')
+
+    #Important to parent before connecting curvature 
+    mc.parent(curvatureUpperLOC, curvatureMidLOC)
+    mc.parent(curvatureLowerLOC, curvatureMidLOC)
+    
+    mc.pointConstraint(curvatureUpperLOC,curvatureUpperCVLOC, o=[0,0,0], mo=False)
+    mc.pointConstraint(curvatureLowerLOC,curvatureLowerCVLOC, o=[0,0,0], mo=False)
+    
+    mc.connectAttr(controlName + '.curvature', curvatureMidLOC + '.scaleX')
+    mc.connectAttr(controlName + '.curvature', curvatureMidLOC + '.scaleY')
+    mc.connectAttr(controlName + '.curvature', curvatureMidLOC + '.scaleZ')
+
+    armCurvatureCV01DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV01DCM')
+    mc.connectAttr(listJoints[0][0] + '.worldMatrix[0]', armCurvatureCV01DCM + '.inputMatrix')
+    mc.connectAttr(armCurvatureCV01DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[0]')
+
+    armCurvatureCV02DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV02DCM')
+    mc.connectAttr(curvatureUpperCVLOC + '.worldMatrix[0]', armCurvatureCV02DCM + '.inputMatrix')
+    mc.connectAttr(armCurvatureCV02DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[1]')
+
+    armCurvatureCV03DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV03DCM')
+    mc.connectAttr(curvatureLowerCVLOC + '.worldMatrix[0]', armCurvatureCV03DCM + '.inputMatrix')
+    mc.connectAttr(armCurvatureCV03DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[2]')
+
+    armCurvatureCV04DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV04DCM')
+    mc.connectAttr(listJoints[0][2] + '.worldMatrix[0]', armCurvatureCV04DCM + '.inputMatrix')
+    mc.connectAttr(armCurvatureCV04DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[3]')
+    
+    mc.pointConstraint(listJoints[0][1],curvatureMidLOC, o=[0,0,0], mo=False)
+    #VERIFIED
+    mc.parent(curvatureUpperLOC, world=True)
+    mc.parent(curvatureLowerLOC, world=True)
+
+    tempConstraint = mc.orientConstraint(listJoints[0][0], listJoints[0][1], curvatureMidLOC)[0]
+    mc.setAttr(tempConstraint + '.interpType', 2)
+
+    mc.matchTransform(curvatureUpperLOC, curvatureMidLOC, pos=False, rot=True, scl=False)
+    mc.matchTransform(curvatureLowerLOC, curvatureMidLOC, pos=False, rot=True, scl=False)
+
+    mc.parent(curvatureUpperLOC, curvatureMidLOC)
+    mc.parent(curvatureLowerLOC, curvatureMidLOC)
+
+    mc.delete(curve1Linear,curveBezier)
+
+
 
 def generateIKPVPinNodes(listJoints, listControls,lastGroup, IKarmSoftCON):
     IKarmUpperPinDBT = mc.createNode('distanceBetween', n='IK_armUpperPinDBT')
