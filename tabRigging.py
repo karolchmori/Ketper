@@ -1,4 +1,5 @@
 import maya.cmds as mc
+import maya.mel as mel
 import ElementsUI as elUI
 import util
 import math
@@ -47,6 +48,10 @@ def createArmJoints():
     groupStructure = 'GRP;ANIM;OFFSET'
     firstGroup = groupStructure.split(';')[0]
 
+    stretch = False
+    soft = False
+    pvPin = False
+
     #Create arms and duplicate to IK and FK
     armJoints.append(util.rigging.createArmChain(armLocators))
 
@@ -71,37 +76,41 @@ def createArmJoints():
     # ----------------------------------------------------------------------
     # --------------------------- STRETCH IK -------------------------------
     # ----------------------------------------------------------------------
-    mc.select(listControlsIK[0])
-    mc.addAttr(longName='upperLenMult', niceName= 'Upper Length Mult', attributeType="float", dv=1, min=0.001, h=False, k=True)
-    mc.addAttr(longName='lowerLenMult', niceName= 'Lower Length Mult', attributeType="float", dv=1, min=0.001, h=False, k=True)
-    mc.addAttr(longName='stretch', niceName= 'Stretch', attributeType="float", dv=0, min=0, max=1, h=False, k=True)
 
-    listControlsIK.append(util.rigging.createCTLJointList([armJoints[1][0]],groupStructure)[0])
-    tempName = util.naming.modifyName('replace',armJoints[1][0],'_JNT','')
-    tempRoot = tempName + '_' + firstGroup
-    mc.parent(tempRoot, lastGroup)
-    mc.parentConstraint(listControlsIK[2], armJoints[1][0], sr=["x","z","y"], w=1)
+    if stretch:
+        mc.select(listControlsIK[0])
+        mc.addAttr(longName='upperLenMult', niceName= 'Upper Length Mult', attributeType="float", dv=1, min=0.001, h=False, k=True)
+        mc.addAttr(longName='lowerLenMult', niceName= 'Lower Length Mult', attributeType="float", dv=1, min=0.001, h=False, k=True)
+        mc.addAttr(longName='stretch', niceName= 'Stretch', attributeType="float", dv=0, min=0, max=1, h=False, k=True)
 
-    # ------------------------------ NODES ----------------------------------
-    IKarmStrCON = util.rigging.generateIKStretchNodes(armJoints, listControlsIK)
+        listControlsIK.append(util.rigging.createCTLJointList([armJoints[1][0]],groupStructure)[0])
+        tempName = util.naming.modifyName('replace',armJoints[1][0],'_JNT','')
+        tempRoot = tempName + '_' + firstGroup
+        mc.parent(tempRoot, lastGroup)
+        mc.parentConstraint(listControlsIK[2], armJoints[1][0], sr=["x","z","y"], w=1)
 
-    # ----------------------------------------------------------------------
-    # ----------------------------- SOFT IK -------------------------------- # DEPENDS FROM STRETCH IK 
-    # ----------------------------------------------------------------------
-    mc.select(listControlsIK[0]) 
-    mc.addAttr(longName='soft', niceName= 'Soft' , attributeType="float", dv=0, min=0, max=1, h=False, k=True)
-    
-    # ------------------------------ NODES ----------------------------------
-    
-    IKarmSoftCON, lastGroup = util.rigging.generateIKSoftNodes(armJoints, listControlsIK, ikHandle, tempConstraint, IKarmStrCON)
-    
-    # ----------------------------------------------------------------------
-    # ----------------------------- PV PIN -------------------------------- # DEPENDS FROM SOFT IK
-    # ----------------------------------------------------------------------
-    mc.select(listControlsIK[1])
-    mc.addAttr(longName='pin', niceName= 'Pin', attributeType="float", dv=0, min=0, max=1, h=False, k=True)
+        # ------------------------------ NODES ----------------------------------
+        IKarmStrCON = util.rigging.generateIKStretchNodes(armJoints, listControlsIK)
 
-    util.rigging.generateIKPVPinNodes(armJoints, listControlsIK, lastGroup, IKarmSoftCON)
+        if soft:
+            # ----------------------------------------------------------------------
+            # ----------------------------- SOFT IK -------------------------------- # DEPENDS FROM STRETCH IK 
+            # ----------------------------------------------------------------------
+            mc.select(listControlsIK[0]) 
+            mc.addAttr(longName='soft', niceName= 'Soft' , attributeType="float", dv=0, min=0, max=1, h=False, k=True)
+            
+            # ------------------------------ NODES ----------------------------------
+            
+            IKarmSoftCON, lastGroup = util.rigging.generateIKSoftNodes(armJoints, listControlsIK, ikHandle, tempConstraint, IKarmStrCON)
+        
+            # ----------------------------------------------------------------------
+            # ----------------------------- PV PIN -------------------------------- # DEPENDS FROM SOFT IK
+            # ----------------------------------------------------------------------
+            if pvPin:
+                mc.select(listControlsIK[1])
+                mc.addAttr(longName='pin', niceName= 'Pin', attributeType="float", dv=0, min=0, max=1, h=False, k=True)
+
+                util.rigging.generateIKPVPinNodes(armJoints, listControlsIK, lastGroup, IKarmSoftCON)
     
 
     # ----------------------------------------------------------------------
@@ -120,26 +129,27 @@ def createArmJoints():
     # ----------------------------------------------------------------------
     # --------------------------- STRETCH FK -------------------------------
     # ----------------------------------------------------------------------
-    mc.select(listControlsFK[0])
-    mc.addAttr(longName='stretch', niceName= 'Stretch' , attributeType="float", dv=1, min=0.001, h=False, k=True)
-    mc.select(listControlsFK[1])
-    mc.addAttr(longName='stretch', niceName= 'Stretch' , attributeType="float", dv=1, min=0.001, h=False, k=True)
+    if stretch:
+        mc.select(listControlsFK[0])
+        mc.addAttr(longName='stretch', niceName= 'Stretch' , attributeType="float", dv=1, min=0.001, h=False, k=True)
+        mc.select(listControlsFK[1])
+        mc.addAttr(longName='stretch', niceName= 'Stretch' , attributeType="float", dv=1, min=0.001, h=False, k=True)
 
-    FKupperLenMultMDL = mc.createNode('multDoubleLinear', n='FK_upperLenMultMDL')
-    FKlowerLenMultMDL = mc.createNode('multDoubleLinear', n='FK_lowerLenMultMDL')
-    mc.connectAttr(listControlsFK[0] + '.stretch', FKupperLenMultMDL + '.input1')
-    mc.connectAttr(listControlsFK[1] + '.stretch', FKlowerLenMultMDL + '.input1')
-    distanceA = mc.getAttr(f"{armJoints[2][1]}.translateX")
-    distanceB = mc.getAttr(f"{armJoints[2][2]}.translateX")
-    mc.setAttr(FKupperLenMultMDL + '.input2', distanceA)
-    mc.setAttr(FKlowerLenMultMDL + '.input2', distanceB)
+        FKupperLenMultMDL = mc.createNode('multDoubleLinear', n='FK_upperLenMultMDL')
+        FKlowerLenMultMDL = mc.createNode('multDoubleLinear', n='FK_lowerLenMultMDL')
+        mc.connectAttr(listControlsFK[0] + '.stretch', FKupperLenMultMDL + '.input1')
+        mc.connectAttr(listControlsFK[1] + '.stretch', FKlowerLenMultMDL + '.input1')
+        distanceA = mc.getAttr(f"{armJoints[2][1]}.translateX")
+        distanceB = mc.getAttr(f"{armJoints[2][2]}.translateX")
+        mc.setAttr(FKupperLenMultMDL + '.input2', distanceA)
+        mc.setAttr(FKlowerLenMultMDL + '.input2', distanceB)
 
-    fkShoulderGroup = util.naming.modifyName('replace',armJoints[2][1], '_JNT','')
-    fkElbowGroup = util.naming.modifyName('replace',armJoints[2][2], '_JNT','')
+        fkShoulderGroup = util.naming.modifyName('replace',armJoints[2][1], '_JNT','')
+        fkElbowGroup = util.naming.modifyName('replace',armJoints[2][2], '_JNT','')
 
 
-    mc.connectAttr(FKupperLenMultMDL + '.output', fkShoulderGroup + '_' + firstGroup + '.translateX')
-    mc.connectAttr(FKlowerLenMultMDL + '.output', fkElbowGroup + '_' + firstGroup + '.translateX')
+        mc.connectAttr(FKupperLenMultMDL + '.output', fkShoulderGroup + '_' + firstGroup + '.translateX')
+        mc.connectAttr(FKlowerLenMultMDL + '.output', fkElbowGroup + '_' + firstGroup + '.translateX')
 
 
 
@@ -171,6 +181,81 @@ def createArmJoints():
     for i in range(len(armJoints[0])):
         pbNode = util.rigging.createPB(armJoints[0][i], armJoints[1][i], armJoints[2][i], True, True)
         mc.connectAttr(f"{controlName}.switchIKFK", f"{pbNode}.weight", force=True)
+
+    
+    # ----------------------------------------------------------------------
+    # ---------------------------- CURVATURE ------------------------------- 
+    # ----------------------------------------------------------------------
+    #VERIFIED
+    mc.select(controlName)
+    mc.addAttr(longName='curvature', niceName= 'Curvature' , attributeType="float", dv=0, max=1, min=0, h=False, k=True)
+    positionsJoints = []
+    #VERIFIED
+    # Get world position of each joint
+    for joint in armJoints[0]:
+        pos = mc.xform(joint, query=True, worldSpace=True, translation=True)
+        positionsJoints.append(pos)
+
+    # Create the EP Curve through these positions
+    curve1Linear = mc.curve(n='armLinear_CRV', d=1, ep=positionsJoints)  # d=3 creates a cubic curve
+    #Duplicate and create a Bezier curve
+    curveBezier = mc.duplicate(curve1Linear, renameChildren=True)[0]
+    mel.eval("nurbsCurveToBezier");
+    curveBezier = mc.rename(curveBezier, 'armBezier_CRV')
+    mc.select(curveBezier+ ".cv[0]", curveBezier+ ".cv[6]")
+    mc.bezierAnchorPreset(p=2)
+    mc.select(curveBezier+ ".cv[3]")
+    mc.bezierAnchorPreset(p=0)
+
+    curve2Degree = mc.duplicate(curve1Linear, renameChildren=True)[0]
+    curve2Degree = mc.rename(curve2Degree, 'armDegree2_CRV')
+    mc.rebuildCurve(curve2Degree, s=2, d=2)
+    curve2DegreeShape = mc.listRelatives(curve2Degree, shapes=True)[0]
+
+    curvatureUpperLOC = mc.spaceLocator(n='curvatureUpper_LOC')[0]
+    cv_positionA = mc.xform(curveBezier + ".cv[2]", query=True, worldSpace=True, translation=True)
+    mc.xform(curvatureUpperLOC, worldSpace=True, translation=cv_positionA)
+    curvatureLowerLOC = mc.spaceLocator(n='curvatureLower_LOC')[0]
+    cv_positionB = mc.xform(curveBezier + ".cv[4]", query=True, worldSpace=True, translation=True)
+    mc.xform(curvatureLowerLOC, worldSpace=True, translation=cv_positionB)
+    curvatureMidLOC = mc.spaceLocator(n='curvatureMid_LOC')[0]
+    cv_positionC = mc.xform(armJoints[0][1], query=True, worldSpace=True, translation=True)
+    mc.xform(curvatureMidLOC, worldSpace=True, translation=cv_positionC)
+
+    curvatureUpperCVLOC = mc.duplicate(curvatureUpperLOC)
+    curvatureUpperCVLOC = mc.rename(curvatureUpperCVLOC, 'curvatureUpperCV_LOC')
+    curvatureLowerCVLOC = mc.duplicate(curvatureLowerLOC)
+    curvatureLowerCVLOC = mc.rename(curvatureLowerCVLOC, 'curvatureLowerCV_LOC')
+
+    mc.pointConstraint(curvatureUpperLOC,curvatureUpperCVLOC, o=[0,0,0], mo=False)
+    mc.pointConstraint(curvatureLowerLOC,curvatureLowerCVLOC, o=[0,0,0], mo=False)
+    mc.pointConstraint(armJoints[0][1],curvatureMidLOC, o=[0,0,0], mo=False)
+
+    mc.connectAttr(controlName + '.curvature', curvatureMidLOC + '.scaleX')
+    mc.connectAttr(controlName + '.curvature', curvatureMidLOC + '.scaleY')
+    mc.connectAttr(controlName + '.curvature', curvatureMidLOC + '.scaleZ')
+
+    tempConstraint = mc.orientConstraint(armJoints[0][0], armJoints[0][1], curvatureMidLOC)[0]
+    mc.setAttr(tempConstraint + '.interpType', 2)
+
+    armCurvatureCV01DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV01DCM')
+    mc.connectAttr(armJoints[0][0] + '.worldMatrix[0]', armCurvatureCV01DCM + '.inputMatrix')
+    mc.connectAttr(armCurvatureCV01DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[0]')
+
+    armCurvatureCV02DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV02DCM')
+    mc.connectAttr(curvatureUpperCVLOC + '.worldMatrix[0]', armCurvatureCV02DCM + '.inputMatrix')
+    mc.connectAttr(armCurvatureCV02DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[1]')
+
+    armCurvatureCV03DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV03DCM')
+    mc.connectAttr(curvatureLowerCVLOC + '.worldMatrix[0]', armCurvatureCV03DCM + '.inputMatrix')
+    mc.connectAttr(armCurvatureCV03DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[2]')
+
+    armCurvatureCV04DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV04DCM')
+    mc.connectAttr(armJoints[0][2] + '.worldMatrix[0]', armCurvatureCV04DCM + '.inputMatrix')
+    mc.connectAttr(armCurvatureCV04DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[3]')
+
+    mc.parent(curvatureUpperLOC, curvatureMidLOC)
+    mc.parent(curvatureLowerLOC, curvatureMidLOC)
 
     
     #util.rigging.parentControlJoints(listControls,armJoints[2])
