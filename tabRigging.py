@@ -203,9 +203,9 @@ def createArmJoints():
     
     nodeFCList = util.rigging.createFloatConstant([0.001, 0.25, 0.5, 0.75, 0.999])
     armUpperMPANodes = util.rigging.createMPACurveJNT(rangeTwist, 'armUpperTwist0', armUpperSegCRVShape, nodeFCList)
-    #armLowerMPANodes = util.rigging.createMPACurveJNT(rangeTwist, 'armLowerTwist0', armLowerSegCRVShape, nodeFCList)
     
-    armUpperNonRollJoints = mc.duplicate(armJoints[0], renameChildren=True)
+    
+    '''armUpperNonRollJoints = mc.duplicate(armJoints[0], renameChildren=True)
     mc.delete(armUpperNonRollJoints[2])
     armUpperNonRollJoints.pop(2)
     armUpperNonRollJoints[0] = mc.rename(armUpperNonRollJoints[0], 'armUpperNonRoll01_JNT')
@@ -223,7 +223,9 @@ def createArmJoints():
     
     mc.pointConstraint(armJoints[0][1], armUpperNonRollHDL)
     mc.parentConstraint(armJoints[0][1], armUpperRollHDL, mo=True)
-    mc.parent(armUpperRollJoints[0],armUpperNonRollJoints[0]) #23:16 - 26
+    mc.parent(armUpperRollJoints[0],armUpperNonRollJoints[0])'''
+
+    armUpperNonRollJoints, armUpperRollJoints = util.rigging.createTwistJoints(armJoints[0], 'armUpper')
 
 
     for i in range(len(armUpperMPANodes)):
@@ -234,7 +236,7 @@ def createArmJoints():
         mc.connectAttr(node + ".outFloat", armUpperMPANodes[i] + '.frontTwist')
 
     #TODO: need to do lower part
-        
+    #armLowerMPANodes = util.rigging.createMPACurveJNT(rangeTwist, 'armLowerTwist0', armLowerSegCRVShape, nodeFCList)    
 
     # ----------------------------------------------------------------------
     # ------------------------------- FINAL -------------------------------- 

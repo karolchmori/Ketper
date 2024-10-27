@@ -610,6 +610,28 @@ def copyJoints(listJoints, newPrefix):
 
     return newList
 
+def createTwistJoints(jointsList, part):
+    NonRollJoints = mc.duplicate(jointsList, renameChildren=True)
+    mc.delete(NonRollJoints[2])
+    NonRollJoints.pop(2)
+    NonRollJoints[0] = mc.rename(NonRollJoints[0], f'{part}NonRoll01_JNT')
+    NonRollJoints[1] = mc.rename(NonRollJoints[1], f'{part}NonRoll02_JNT')
+    mc.setAttr(NonRollJoints[1] + ".jointOrientX", 0)
+    mc.setAttr(NonRollJoints[1] + ".jointOrientY", 0)
+    mc.setAttr(NonRollJoints[1] + ".jointOrientZ", 0)
+
+    RollJoints = mc.duplicate(NonRollJoints, renameChildren=True)
+    RollJoints[0] = mc.rename(RollJoints[0], f'{part}Roll01_JNT')
+    RollJoints[1] = mc.rename(RollJoints[1], f'{part}Roll02_JNT')
+
+    armUpperNonRollHDL = mc.ikHandle(name=f'{part}NonRoll_HDL', sol='ikSCsolver', sj=NonRollJoints[0], ee=NonRollJoints[1])[0]
+    armUpperRollHDL = mc.ikHandle(name=f'{part}Roll_HDL', sol='ikSCsolver', sj=RollJoints[0], ee=RollJoints[1])[0]
+    
+    mc.pointConstraint(jointsList[1], armUpperNonRollHDL)
+    mc.parentConstraint(jointsList[1], armUpperRollHDL, mo=True)
+    mc.parent(RollJoints[0],NonRollJoints[0])
+
+    return NonRollJoints, RollJoints
 
 def getVectorPos(rootPos, midPos, endPos, distance):
 
