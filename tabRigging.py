@@ -1,4 +1,5 @@
 import maya.cmds as mc
+import maya.mel as mel
 import ElementsUI as elUI
 import util
 import math
@@ -47,9 +48,9 @@ def createArmJoints():
     groupStructure = 'GRP;ANIM;OFFSET'
     firstGroup = groupStructure.split(';')[0]
 
-    stretch = True
-    soft = True
-    pvPin = True
+    stretch = False
+    soft = False
+    pvPin = False
     curvature = True
 
     #Create arms and duplicate to IK and FK
@@ -186,9 +187,53 @@ def createArmJoints():
     if curvature:
         mc.select(controlName)
         mc.addAttr(longName='curvature', niceName= 'Curvature' , attributeType="float", dv=0, max=1, min=0, h=False, k=True)
-        util.rigging.generateCurvatureNodes(armJoints, controlName)
+        curve2Degree = util.rigging.generateCurvatureNodes(armJoints, controlName)
 
+    # ----------------------------------------------------------------------
+    # ------------------------------ TWIST --------------------------------- 
+    # ----------------------------------------------------------------------
+    detachCurve = mc.detachCurve(curve2Degree, p=0.5, rpo=False, ch=True) #Important to keep the ch
+    armUpperSegCRV = detachCurve[0]
+    armLowerSegCRV = detachCurve[1]
+    armUpperSegCRV = mc.rename(armUpperSegCRV, 'armUpperSeg_CRV')
+    armLowerSegCRV = mc.rename(armLowerSegCRV, 'armLowerSeg_CRV')
+    armUpperSegCRVShape = mc.listRelatives(armUpperSegCRV, shapes=True)[0]
+    armLowerSegCRVShape = mc.listRelatives(armLowerSegCRV, shapes=True)[0]
+    rangeTwist = 5
     
+    nodeFCList = util.rigging.createFloatConstant([0.001, 0.25, 0.5, 0.75, 0.999])
+    armUpperMPANodes = util.rigging.createMPACurveJNT(rangeTwist, 'armUpperTwist0', armUpperSegCRVShape, nodeFCList)
+    #armLowerMPANodes = util.rigging.createMPACurveJNT(rangeTwist, 'armLowerTwist0', armLowerSegCRVShape, nodeFCList)
+    
+    armUpperNonRollJoints = mc.duplicate(armJoints[0], renameChildren=True)
+    mc.delete(armUpperNonRollJoints[2])
+    armUpperNonRollJoints.pop(2)
+    armUpperNonRollJoints[0] = mc.rename(armUpperNonRollJoints[0], 'armUpperNonRoll01_JNT')
+    armUpperNonRollJoints[1] = mc.rename(armUpperNonRollJoints[1], 'armUpperNonRoll02_JNT')
+    mc.setAttr(armUpperNonRollJoints[1] + ".jointOrientX", 0)
+    mc.setAttr(armUpperNonRollJoints[1] + ".jointOrientY", 0)
+    mc.setAttr(armUpperNonRollJoints[1] + ".jointOrientZ", 0)
+
+    armUpperRollJoints = mc.duplicate(armUpperNonRollJoints, renameChildren=True)
+    armUpperRollJoints[0] = mc.rename(armUpperRollJoints[0], 'armUpperRoll01_JNT')
+    armUpperRollJoints[1] = mc.rename(armUpperRollJoints[1], 'armUpperRoll02_JNT')
+
+    armUpperNonRollHDL = mc.ikHandle(name='armUpperNonRoll_HDL', sol='ikSCsolver', sj=armUpperNonRollJoints[0], ee=armUpperNonRollJoints[1])[0]
+    armUpperRollHDL = mc.ikHandle(name='armUpperRoll_HDL', sol='ikSCsolver', sj=armUpperRollJoints[0], ee=armUpperRollJoints[1])[0]
+    
+    mc.pointConstraint(armJoints[0][1], armUpperNonRollHDL)
+    mc.parentConstraint(armJoints[0][1], armUpperRollHDL, mo=True)
+    mc.parent(armUpperRollJoints[0],armUpperNonRollJoints[0]) #23:16 - 26
+
+
+    for i in range(len(armUpperMPANodes)-1):
+        mc.setAttr(armUpperMPANodes[i] + ".worldUpType", 2)
+        mc.connectAttr(armUpperNonRollJoints[0]+'.worldMatrix[0]', armUpperMPANodes[i] + ".worldUpMatrix")
+
+        node = util.rigging.floatMConnect(f'armUpper{i+1}FLM', 2, nodeFCList[i] + '.outFloat', armUpperRollJoints[0] +'.rotateX')
+        #mc.connectAttr(node + ".output", armUpperMPANodes[i] + '.frontTwist')
+
+        
 
     # ----------------------------------------------------------------------
     # ------------------------------- FINAL -------------------------------- 

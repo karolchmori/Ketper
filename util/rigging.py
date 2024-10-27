@@ -268,6 +268,8 @@ def generateCurvatureNodes(listJoints, controlName):
     mc.delete(curve1Linear,curveBezier)
     mc.group(curve2Degree, curvatureMidLOC, curvatureUpperCVLOC, curvatureLowerCVLOC, n= 'armCurvature_GRP')
 
+    return curve2Degree
+
 
 def generateIKPVPinNodes(listJoints, listControls,lastGroup, IKarmSoftCON):
     IKarmUpperPinDBT = mc.createNode('distanceBetween', n='IK_armUpperPinDBT')
@@ -627,6 +629,44 @@ def getVectorPos(rootPos, midPos, endPos, distance):
 
     return poleV
 
+
+def createFloatConstant(valuesList):
+    nodeList = []
+
+    for i in range(len(valuesList)):
+        node = mc.createNode('floatConstant')
+        nodeList.append(node)
+        mc.setAttr(node + '.inFloat', valuesList[i])
+    print(nodeList)
+    return nodeList
+
+def createMPACurveJNT(length, mainName, shape, floatConstant):
+    nodesMPA = []
+    for i in range(length):
+        mainNameC = mainName + str(i+1)
+        node =  mc.createNode('motionPath', n= mainNameC + "MPA")
+        nodesMPA.append(node)
+        mc.connectAttr(shape + '.worldSpace[0]', node + '.geometryPath')
+        mc.setAttr(node + ".fractionMode", True) #parametric length opposite -- BUG
+        mc.setAttr(node + ".upAxis", 1)
+        mc.setAttr(node + ".frontAxis", 0)
+
+        '''valueTwist = i/(length-1)
+        
+        if valueTwist == 0:
+            valueTwist = 0.0001
+        elif valueTwist == 1:
+            valueTwist = 0.9999
+            
+        mc.setAttr(node + ".uValue", valueTwist)'''
+
+        mc.connectAttr(floatConstant[i] + '.outFloat', node + '.uValue')
+        
+        joint = mc.joint(n= mainNameC + '_JNT')
+        mc.connectAttr(node + '.allCoordinates', joint + '.translate')
+        mc.connectAttr(node + '.rotate', joint + '.rotate')
+    
+    return nodesMPA
 
 def createPB(jointMain, jointA, jointB, trBool, rotBool):
     node = mc.createNode('pairBlend')
