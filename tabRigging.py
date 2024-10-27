@@ -226,13 +226,14 @@ def createArmJoints():
     mc.parent(armUpperRollJoints[0],armUpperNonRollJoints[0]) #23:16 - 26
 
 
-    for i in range(len(armUpperMPANodes)-1):
+    for i in range(len(armUpperMPANodes)):
         mc.setAttr(armUpperMPANodes[i] + ".worldUpType", 2)
         mc.connectAttr(armUpperNonRollJoints[0]+'.worldMatrix[0]', armUpperMPANodes[i] + ".worldUpMatrix")
 
         node = util.rigging.floatMConnect(f'armUpper{i+1}FLM', 2, nodeFCList[i] + '.outFloat', armUpperRollJoints[0] +'.rotateX')
-        #mc.connectAttr(node + ".output", armUpperMPANodes[i] + '.frontTwist')
+        mc.connectAttr(node + ".outFloat", armUpperMPANodes[i] + '.frontTwist')
 
+    #TODO: need to do lower part
         
 
     # ----------------------------------------------------------------------
