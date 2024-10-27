@@ -610,10 +610,19 @@ def copyJoints(listJoints, newPrefix):
 
     return newList
 
-def createTwistJoints(jointsList, part):
+def createTwistStructure(jointsList, part, typePop):
     NonRollJoints = mc.duplicate(jointsList, renameChildren=True)
-    mc.delete(NonRollJoints[2])
-    NonRollJoints.pop(2)
+
+    if typePop == 'end':
+        popNum = len(NonRollJoints)-1
+        mc.delete(NonRollJoints[popNum])
+        NonRollJoints.pop(popNum)
+        
+    elif typePop == 'root':
+        mc.parent(NonRollJoints[1], world=True)
+        mc.delete(NonRollJoints[0])
+        NonRollJoints.pop(0)
+        
     NonRollJoints[0] = mc.rename(NonRollJoints[0], f'{part}NonRoll01_JNT')
     NonRollJoints[1] = mc.rename(NonRollJoints[1], f'{part}NonRoll02_JNT')
     mc.setAttr(NonRollJoints[1] + ".jointOrientX", 0)
@@ -627,6 +636,7 @@ def createTwistJoints(jointsList, part):
     armUpperNonRollHDL = mc.ikHandle(name=f'{part}NonRoll_HDL', sol='ikSCsolver', sj=NonRollJoints[0], ee=NonRollJoints[1])[0]
     armUpperRollHDL = mc.ikHandle(name=f'{part}Roll_HDL', sol='ikSCsolver', sj=RollJoints[0], ee=RollJoints[1])[0]
     
+
     mc.pointConstraint(jointsList[1], armUpperNonRollHDL)
     mc.parentConstraint(jointsList[1], armUpperRollHDL, mo=True)
     mc.parent(RollJoints[0],NonRollJoints[0])

@@ -202,31 +202,12 @@ def createArmJoints():
     rangeTwist = 5
     
     nodeFCList = util.rigging.createFloatConstant([0.001, 0.25, 0.5, 0.75, 0.999])
+    
+    #TODO add a parent to NonRoll01 --> driver is joint01 Original
+
+
     armUpperMPANodes = util.rigging.createMPACurveJNT(rangeTwist, 'armUpperTwist0', armUpperSegCRVShape, nodeFCList)
-    
-    
-    '''armUpperNonRollJoints = mc.duplicate(armJoints[0], renameChildren=True)
-    mc.delete(armUpperNonRollJoints[2])
-    armUpperNonRollJoints.pop(2)
-    armUpperNonRollJoints[0] = mc.rename(armUpperNonRollJoints[0], 'armUpperNonRoll01_JNT')
-    armUpperNonRollJoints[1] = mc.rename(armUpperNonRollJoints[1], 'armUpperNonRoll02_JNT')
-    mc.setAttr(armUpperNonRollJoints[1] + ".jointOrientX", 0)
-    mc.setAttr(armUpperNonRollJoints[1] + ".jointOrientY", 0)
-    mc.setAttr(armUpperNonRollJoints[1] + ".jointOrientZ", 0)
-
-    armUpperRollJoints = mc.duplicate(armUpperNonRollJoints, renameChildren=True)
-    armUpperRollJoints[0] = mc.rename(armUpperRollJoints[0], 'armUpperRoll01_JNT')
-    armUpperRollJoints[1] = mc.rename(armUpperRollJoints[1], 'armUpperRoll02_JNT')
-
-    armUpperNonRollHDL = mc.ikHandle(name='armUpperNonRoll_HDL', sol='ikSCsolver', sj=armUpperNonRollJoints[0], ee=armUpperNonRollJoints[1])[0]
-    armUpperRollHDL = mc.ikHandle(name='armUpperRoll_HDL', sol='ikSCsolver', sj=armUpperRollJoints[0], ee=armUpperRollJoints[1])[0]
-    
-    mc.pointConstraint(armJoints[0][1], armUpperNonRollHDL)
-    mc.parentConstraint(armJoints[0][1], armUpperRollHDL, mo=True)
-    mc.parent(armUpperRollJoints[0],armUpperNonRollJoints[0])'''
-
-    armUpperNonRollJoints, armUpperRollJoints = util.rigging.createTwistJoints(armJoints[0], 'armUpper')
-
+    armUpperNonRollJoints, armUpperRollJoints = util.rigging.createTwistStructure(armJoints[0], 'armUpper', 'end')
 
     for i in range(len(armUpperMPANodes)):
         mc.setAttr(armUpperMPANodes[i] + ".worldUpType", 2)
@@ -235,8 +216,7 @@ def createArmJoints():
         node = util.rigging.floatMConnect(f'armUpper{i+1}FLM', 2, nodeFCList[i] + '.outFloat', armUpperRollJoints[0] +'.rotateX')
         mc.connectAttr(node + ".outFloat", armUpperMPANodes[i] + '.frontTwist')
 
-    #TODO: need to do lower part
-    #armLowerMPANodes = util.rigging.createMPACurveJNT(rangeTwist, 'armLowerTwist0', armLowerSegCRVShape, nodeFCList)    
+
 
     # ----------------------------------------------------------------------
     # ------------------------------- FINAL -------------------------------- 
