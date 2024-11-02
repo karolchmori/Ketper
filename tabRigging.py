@@ -4,8 +4,8 @@ import ElementsUI as elUI
 import util
 import math
 
-armLocators = []
-armJoints = []
+limbLocators = []
+limbJoints = []
 
 
 def page(mainWidth, mainHeight):
@@ -22,95 +22,97 @@ def page(mainWidth, mainHeight):
     mc.textField('structureNameTXT', w=mainWidth/2, placeholderText='Leave empty to use first selection name')
     armSectionWidth = mainWidth/4
     mc.setParent('..') # End frameLayout
-    mc.frameLayout(label='Arm', collapsable=False, collapse=False, marginWidth=5, marginHeight=5)
+    mc.frameLayout(label='Limbs', collapsable=False, collapse=False, marginWidth=5, marginHeight=5)
     mc.rowLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, armSectionWidth), (2, armSectionWidth/2)])
     mc.text(l='Create Locators: ')
-    mc.button('armLocButton', l='GO', c=lambda _: createLocatorArm())
+    mc.button('limbLocButton', l='GO', c=lambda _: createLocatorLimb())
     mc.setParent('..') # End rowLayout
 
     elUI.separatorTitleUI('Features',5,20,mainWidth/2-50)
 
     mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, armSectionWidth), (2, armSectionWidth/2)])
     mc.text(l='IK/FK')
-    mc.checkBox('featArmIKFK', l='', en=False, cc=armFeatIKFKChanged)
+    mc.checkBox('featLimbIKFK', l='', en=False, cc=limbFeatIKFKChanged)
     mc.text(l='Stretch')
-    mc.checkBox('featArmStretch', l='', en=False, cc=armFeatStretchChanged)
+    mc.checkBox('featLimbStretch', l='', en=False, cc=limbFeatStretchChanged)
     mc.text(l='Soft')
-    mc.checkBox('featArmSoft', l='', en=False, cc=armFeatSoftChanged)
+    mc.checkBox('featLimbSoft', l='', en=False, cc=limbFeatSoftChanged)
     mc.text(l='PV Pin')
-    mc.checkBox('featArmPVPin', l='', en=False)
+    mc.checkBox('featLimbPVPin', l='', en=False)
     mc.text(l='Curvature')
-    mc.checkBox('featArmCurv', l='', en=False)
+    mc.checkBox('featLimbCurv', l='', en=False)
     mc.setParent('..') # End rowColumnLayout
 
     mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, armSectionWidth), (2, armSectionWidth/2)])
     mc.text(l='Create Joints: ')
-    mc.button('armCreateButton', l='GO', c=lambda _: createArmJoints(), en=False)
+    mc.button('limbCreateButton', l='GO', c=lambda _: createLimbJoints(), en=False)
     mc.setParent('..') # End rowColumnLayout
-    mc.button('armResetButton', l='Restart', c=lambda _: restartArmChain(), en=False)
+    mc.button('limbResetButton', l='Restart', c=lambda _: restartLimbChain(), en=False)
     
     mc.setParent('..') # End frameLayout
     mc.setParent( '..' ) # End columnLayout  
     return child
 
-def armFeatIKFKChanged(*args):
+def limbFeatIKFKChanged(*args):
     if mc.checkBox('featArmIKFK', query=True, value=True):
-        util.select.modifyCheckBoxList(['featArmStretch', 'featArmCurv'], False, True)
+        util.select.modifyCheckBoxList(['featLimbStretch', 'featLimbCurv'], False, True)
     else:
-        util.select.modifyCheckBoxList(['featArmStretch', 'featArmSoft', 'featArmPVPin', 'featArmCurv'], False, False)
+        util.select.modifyCheckBoxList(['featLimbStretch', 'featLimbSoft', 'featLimbPVPin', 'featLimbCurv'], False, False)
 
-def armFeatStretchChanged(*args):
-    if mc.checkBox('featArmStretch', query=True, value=True):
-        util.select.modifyCheckBoxList(['featArmSoft'], False, True)
+def limbFeatStretchChanged(*args):
+    if mc.checkBox('featLimbStretch', query=True, value=True):
+        util.select.modifyCheckBoxList(['featLimbSoft'], False, True)
     else:
-        util.select.modifyCheckBoxList(['featArmSoft', 'featArmPVPin'], False, False)
+        util.select.modifyCheckBoxList(['featLimbSoft', 'featLimbPVPin'], False, False)
 
-def armFeatSoftChanged(*args):
-    if mc.checkBox('featArmSoft', query=True, value=True):
-        util.select.modifyCheckBoxList(['featArmPVPin'], False, True)
+def limbFeatSoftChanged(*args):
+    if mc.checkBox('featLimbSoft', query=True, value=True):
+        util.select.modifyCheckBoxList(['featLimbPVPin'], False, True)
     else:
-        util.select.modifyCheckBoxList(['featArmPVPin'], False, False)
+        util.select.modifyCheckBoxList(['featLimbPVPin'], False, False)
 
-def createLocatorArm():
-    global armLocators
-    armLocators = util.rigging.createLocatorArm()
-    mc.button('armLocButton', e=True, en=False)
-    util.select.modifyCheckBoxList(['featArmIKFK'], True, True)
-    util.select.modifyCheckBoxList(['featArmStretch', 'featArmCurv'], False, True)
-    util.select.modifyButtonList(['armCreateButton','armResetButton'], True)
+def createLocatorLimb():
+    global limbLocators
+    limbLocators = util.rigging.createLocatorLimb()
+    mc.button('limbLocButton', e=True, en=False)
+    util.select.modifyCheckBoxList(['featLimbIKFK'], True, True)
+    util.select.modifyCheckBoxList(['featLimbStretch', 'featLimbCurv'], False, True)
+    util.select.modifyButtonList(['limbCreateButton','limbResetButton'], True)
 
     util.select.setfocusMaya()
 
 
-def createArmJoints():
-    global armJoints
+def createLimbJoints():
+    global limbJoints
     groupStructure = 'GRP;ANIM;OFFSET'
     firstGroup = groupStructure.split(';')[0]
 
-    stretch = mc.checkBox('featArmStretch', q=True, v=True)
-    soft =  mc.checkBox('featArmSoft', q=True, v=True)
-    pvPin = mc.checkBox('featArmPVPin', q=True, v=True)
-    curvature = mc.checkBox('featArmCurv', q=True, v=True)
+    stretch = mc.checkBox('featLimbStretch', q=True, v=True)
+    soft =  mc.checkBox('featLimbSoft', q=True, v=True)
+    pvPin = mc.checkBox('featLimbPVPin', q=True, v=True)
+    curvature = mc.checkBox('featLimbCurv', q=True, v=True)
     twist = False
 
+    limbName = 'test'
+
     #Create arms and duplicate to IK and FK
-    armJoints.append(util.rigging.createArmChain(armLocators))
+    limbJoints.append(util.rigging.createLimbChain(limbLocators))
 
     # ----------------------------------------------------------------------
     # --------------------------- CREATE IK ARM ----------------------------
     # ----------------------------------------------------------------------
     
-    armJoints.append(util.rigging.copyJoints(armJoints[0],'IK'))
-    ikHandle = mc.ikHandle(n='IK_Arm_HDL', sj=armJoints[1][0], ee=armJoints[1][2], sol='ikRPsolver')[0] 
-    listControlsIK = util.rigging.createIkCTLJointList(ikHandle, armJoints[1][1] ,groupStructure)
+    limbJoints.append(util.rigging.copyJoints(limbJoints[0],'IK'))
+    ikHandle = mc.ikHandle(n='IK_Arm_HDL', sj=limbJoints[1][0], ee=limbJoints[1][2], sol='ikRPsolver')[0] 
+    listControlsIK = util.rigging.createIkCTLJointList(ikHandle, limbJoints[1][1] ,groupStructure)
     
     tempConstraint = mc.parentConstraint(listControlsIK[0], ikHandle, mo=True, w=1)
     mc.poleVectorConstraint(listControlsIK[1], ikHandle)
-    mc.orientConstraint( listControlsIK[0], armJoints[1][2], mo=True)
+    mc.orientConstraint( listControlsIK[0], limbJoints[1][2], mo=True)
 
     #Create groups and parent it. ALSO move PV Control to a position inside the plane
     lastGroup = util.create.createGroupStructure(groupStructure,'IK_Arm_Controls',None)
-    util.rigging.movePVControl(armJoints[1], 'IK_Arm_PV_' + firstGroup, 4)
+    util.rigging.movePVControl(limbJoints[1], 'IK_Arm_PV_' + firstGroup, 4)
     mc.parent('IK_Arm_' + firstGroup, lastGroup)
     mc.parent('IK_Arm_PV_' + firstGroup, lastGroup)
 
@@ -124,14 +126,14 @@ def createArmJoints():
         mc.addAttr(longName='lowerLenMult', niceName= 'Lower Length Mult', attributeType="float", dv=1, min=0.001, h=False, k=True)
         mc.addAttr(longName='stretch', niceName= 'Stretch', attributeType="float", dv=0, min=0, max=1, h=False, k=True)
 
-        listControlsIK.append(util.rigging.createCTLJointList([armJoints[1][0]],groupStructure)[0])
-        tempName = util.naming.modifyName('replace',armJoints[1][0],'_JNT','')
+        listControlsIK.append(util.rigging.createCTLJointList([limbJoints[1][0]],groupStructure)[0])
+        tempName = util.naming.modifyName('replace',limbJoints[1][0],'_JNT','')
         tempRoot = tempName + '_' + firstGroup
         mc.parent(tempRoot, lastGroup)
-        mc.parentConstraint(listControlsIK[2], armJoints[1][0], sr=["x","z","y"], w=1)
+        mc.parentConstraint(listControlsIK[2], limbJoints[1][0], sr=["x","z","y"], w=1)
 
         # ------------------------------ NODES ----------------------------------
-        IKarmStrCON = util.rigging.generateIKStretchNodes(armJoints, listControlsIK)
+        IKlimbStrCON = util.rigging.generateIKStretchNodes(limbJoints, listControlsIK)
 
         if soft:
             # ----------------------------------------------------------------------
@@ -142,7 +144,7 @@ def createArmJoints():
             
             # ------------------------------ NODES ----------------------------------
             
-            IKarmSoftCON, lastGroup = util.rigging.generateIKSoftNodes(armJoints, listControlsIK, ikHandle, tempConstraint, IKarmStrCON)
+            IKarmSoftCON, lastGroup = util.rigging.generateIKSoftNodes(limbJoints, listControlsIK, ikHandle, tempConstraint, IKlimbStrCON)
         
             # ----------------------------------------------------------------------
             # ----------------------------- PV PIN -------------------------------- # DEPENDS FROM SOFT IK
@@ -151,7 +153,7 @@ def createArmJoints():
                 mc.select(listControlsIK[1])
                 mc.addAttr(longName='pin', niceName= 'Pin', attributeType="float", dv=0, min=0, max=1, h=False, k=True)
 
-                util.rigging.generateIKPVPinNodes(armJoints, listControlsIK, lastGroup, IKarmSoftCON)
+                util.rigging.generateIKPVPinNodes(limbJoints, listControlsIK, lastGroup, IKarmSoftCON, limbName)
     
 
     # ----------------------------------------------------------------------
@@ -159,10 +161,10 @@ def createArmJoints():
     # ----------------------------------------------------------------------
 
     #Create FK ARM Chain with all Groups
-    armJoints.append(util.rigging.copyJoints(armJoints[0],'FK'))
-    listControlsFK = util.rigging.createCTLJointList(armJoints[2],groupStructure)
-    util.rigging.parentControlJoints(listControlsFK,armJoints[2])
-    tempName = util.naming.modifyName('replace',armJoints[2][0],'_JNT','')
+    limbJoints.append(util.rigging.copyJoints(limbJoints[0],'FK'))
+    listControlsFK = util.rigging.createCTLJointList(limbJoints[2],groupStructure)
+    util.rigging.parentControlJoints(listControlsFK,limbJoints[2])
+    tempName = util.naming.modifyName('replace',limbJoints[2][0],'_JNT','')
     tempRoot = tempName + '_' + firstGroup
     lastGroup = util.create.createGroupStructure(groupStructure,'FK_Arm_Controls',None)
     mc.parent(tempRoot, lastGroup)
@@ -180,13 +182,13 @@ def createArmJoints():
         FKlowerLenMultMDL = mc.createNode('multDoubleLinear', n='FK_lowerLenMultMDL')
         mc.connectAttr(listControlsFK[0] + '.stretch', FKupperLenMultMDL + '.input1')
         mc.connectAttr(listControlsFK[1] + '.stretch', FKlowerLenMultMDL + '.input1')
-        distanceA = mc.getAttr(f"{armJoints[2][1]}.translateX")
-        distanceB = mc.getAttr(f"{armJoints[2][2]}.translateX")
+        distanceA = mc.getAttr(f"{limbJoints[2][1]}.translateX")
+        distanceB = mc.getAttr(f"{limbJoints[2][2]}.translateX")
         mc.setAttr(FKupperLenMultMDL + '.input2', distanceA)
         mc.setAttr(FKlowerLenMultMDL + '.input2', distanceB)
 
-        fkShoulderGroup = util.naming.modifyName('replace',armJoints[2][1], '_JNT','')
-        fkElbowGroup = util.naming.modifyName('replace',armJoints[2][2], '_JNT','')
+        fkShoulderGroup = util.naming.modifyName('replace',limbJoints[2][1], '_JNT','')
+        fkElbowGroup = util.naming.modifyName('replace',limbJoints[2][2], '_JNT','')
 
         mc.connectAttr(FKupperLenMultMDL + '.output', fkShoulderGroup + '_' + firstGroup + '.translateX')
         mc.connectAttr(FKlowerLenMultMDL + '.output', fkElbowGroup + '_' + firstGroup + '.translateX')
@@ -202,7 +204,7 @@ def createArmJoints():
     mc.rename(selection, controlName)
     
     tempGroup = 'Arm_Preferences_Controls_' + firstGroup
-    mc.matchTransform(tempGroup, armJoints[0][0], pos=True)
+    mc.matchTransform(tempGroup, limbJoints[0][0], pos=True)
     mc.move(0, 4, 0, tempGroup, relative=True)
 
     #Add attribute and visibility with controls
@@ -216,8 +218,8 @@ def createArmJoints():
     # ----------------------------------------------------------------------
     # --------------------------- PAIR BLENDS ------------------------------
     # ----------------------------------------------------------------------
-    for i in range(len(armJoints[0])):
-        pbNode = util.rigging.createPB(armJoints[0][i], armJoints[1][i], armJoints[2][i], True, True)
+    for i in range(len(limbJoints[0])):
+        pbNode = util.rigging.createPB(limbJoints[0][i], limbJoints[1][i], limbJoints[2][i], True, True)
         mc.connectAttr(f"{controlName}.switchIKFK", f"{pbNode}.weight", force=True)
 
     
@@ -227,7 +229,7 @@ def createArmJoints():
     if curvature:
         mc.select(controlName)
         mc.addAttr(longName='curvature', niceName= 'Curvature' , attributeType="float", dv=0, max=1, min=0, h=False, k=True)
-        curve2Degree = util.rigging.generateCurvatureNodes(armJoints, controlName)
+        curve2Degree = util.rigging.generateCurvatureNodes(limbJoints, controlName, limbName)
 
     # ----------------------------------------------------------------------
     # ------------------------------ TWIST --------------------------------- 
@@ -246,7 +248,7 @@ def createArmJoints():
         #TODO add a parent to NonRoll01 --> driver is joint01 Original
 
         armUpperMPANodes = util.rigging.createMPACurveJNT(rangeTwist, 'armUpperTwist0', armUpperSegCRVShape, nodeFCList)
-        armUpperNonRollJoints, armUpperRollJoints = util.rigging.createTwistStructure(armJoints[0], 'armUpper', 'end')
+        armUpperNonRollJoints, armUpperRollJoints = util.rigging.createTwistStructure(limbJoints[0], 'armUpper', 'end')
 
         for i in range(len(armUpperMPANodes)):
             mc.setAttr(armUpperMPANodes[i] + ".worldUpType", 2)
@@ -262,19 +264,19 @@ def createArmJoints():
     # ----------------------------------------------------------------------
 
     #Disable button
-    mc.button('armCreateButton', e=True, en=False)
-    print(armJoints)
+    mc.button('limbCreateButton', e=True, en=False)
+    print(limbJoints)
     util.select.setfocusMaya()
 
 
-def restartArmChain():
-    global armLocators
-    global armJoints
-    armLocators = []
-    armJoints = []
-    mc.button('armLocButton', e=True, en=True)
-    util.select.modifyButtonList(['armCreateButton','armResetButton'], False)
-    util.select.modifyCheckBoxList(['featArmIKFK', 'featArmStretch', 'featArmSoft', 'featArmPVPin', 'featArmCurv'], False, False)
+def restartLimbChain():
+    global limbLocators
+    global limbJoints
+    limbLocators = []
+    limbJoints = []
+    mc.button('limbLocButton', e=True, en=True)
+    util.select.modifyButtonList(['limbCreateButton','limbResetButton'], False)
+    util.select.modifyCheckBoxList(['featLimbIKFK', 'featLimbStretch', 'featLimbSoft', 'featLimbPVPin', 'featLimbCurv'], False, False)
 
 def createCTLStructure():
     selectedObjects = mc.ls(selection=True)
