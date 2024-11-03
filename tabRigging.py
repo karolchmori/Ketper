@@ -144,7 +144,7 @@ def createLimbJoints():
             
             # ------------------------------ NODES ----------------------------------
             
-            IKarmSoftCON, lastGroup = util.rigging.generateIKSoftNodes(limbJoints, listControlsIK, ikHandle, tempConstraint, IKlimbStrCON)
+            IKarmSoftCON, lastGroup = util.rigging.generateIKSoftNodes(limbJoints, listControlsIK, ikHandle, tempConstraint, IKlimbStrCON, limbName)
         
             # ----------------------------------------------------------------------
             # ----------------------------- PV PIN -------------------------------- # DEPENDS FROM SOFT IK

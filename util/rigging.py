@@ -92,7 +92,7 @@ def delInternalNameByList(itemsList):
         delInternalName(item)
 
 def getObjByInternalName(internalName):
-    #Select original Arm Locators
+    #Select original Limb Locators
     selectedObjects = mc.ls(dag=True, type='transform')
     mc.select(selectedObjects)
 
@@ -105,7 +105,7 @@ def getObjByInternalName(internalName):
 
 
 
-#region Arm Related
+#region Limb Related
 
 def createLocatorLimb():
     locatorNames = ['root_LOC','mid_LOC', 'end_LOC']
@@ -139,11 +139,11 @@ def createLimbChain(locatorList):
     mainName = naming.modifyNameList('replace',newLocatorList,'_LOC', '')
     jointNames = naming.modifyNameList('suffix',mainName,'_JNT', '')
 
-    # Create OLD NAMES -- TODO: REVIEW, what if we want to use this name later?? if the character has 4 arms, the name is going to be the same for everything, but is good to have the name so you know where the connection starts??? 
-    #TODO: what if we always return the arm that we create and save it in a global list??? LETS THINK LATER
+    # Create OLD NAMES -- TODO: REVIEW, what if we want to use this name later?? if the character has 4 limb, the name is going to be the same for everything, but is good to have the name so you know where the connection starts??? 
+    #TODO: what if we always return the limb that we create and save it in a global list??? LETS THINK LATER
     internalJointNames = naming.modifyNameList('replace', locatorList, '_LOC', '_JNT')
 
-    #Delete Arm locators
+    #Delete Limb locators
     mc.delete(newLocatorList)
     
     # When creating a joint without parenting we are also saving the OLD NAME in an attribute
@@ -188,7 +188,7 @@ def generateCurvatureNodes(listJoints, controlName, limbName):
         positionsJoints.append(pos)
 
     # Create the EP Curve through these positions
-    curve1Linear = mc.curve(n='armLinear_CRV', d=1, ep=positionsJoints) 
+    curve1Linear = mc.curve(n=f'{limbName}Linear_CRV', d=1, ep=positionsJoints) 
     
     #Duplicate and create a Bezier curve
     curveBezier = mc.duplicate(curve1Linear, renameChildren=True)[0]
@@ -232,19 +232,19 @@ def generateCurvatureNodes(listJoints, controlName, limbName):
     mc.connectAttr(controlName + '.curvature', curvatureMidLOC + '.scaleY')
     mc.connectAttr(controlName + '.curvature', curvatureMidLOC + '.scaleZ')
 
-    limbCurvatureCV01DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV01DCM')
+    limbCurvatureCV01DCM = mc.createNode('decomposeMatrix', name=f'{limbName}CurvatureCV01DCM')
     mc.connectAttr(listJoints[0][0] + '.worldMatrix[0]', limbCurvatureCV01DCM + '.inputMatrix')
     mc.connectAttr(limbCurvatureCV01DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[0]')
 
-    limbCurvatureCV02DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV02DCM')
+    limbCurvatureCV02DCM = mc.createNode('decomposeMatrix', name=f'{limbName}CurvatureCV02DCM')
     mc.connectAttr(curvatureUpperCVLOC + '.worldMatrix[0]', limbCurvatureCV02DCM + '.inputMatrix')
     mc.connectAttr(limbCurvatureCV02DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[1]')
 
-    limbCurvatureCV03DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV03DCM')
+    limbCurvatureCV03DCM = mc.createNode('decomposeMatrix', name=f'{limbName}CurvatureCV03DCM')
     mc.connectAttr(curvatureLowerCVLOC + '.worldMatrix[0]', limbCurvatureCV03DCM + '.inputMatrix')
     mc.connectAttr(limbCurvatureCV03DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[2]')
 
-    limbCurvatureCV04DCM = mc.createNode('decomposeMatrix', name='armCurvatureCV04DCM')
+    limbCurvatureCV04DCM = mc.createNode('decomposeMatrix', name=f'{limbName}CurvatureCV04DCM')
     mc.connectAttr(listJoints[0][2] + '.worldMatrix[0]', limbCurvatureCV04DCM + '.inputMatrix')
     mc.connectAttr(limbCurvatureCV04DCM + '.outputTranslate', curve2DegreeShape + '.controlPoints[3]')
     
@@ -295,14 +295,14 @@ def generateIKPVPinNodes(listJoints, listControls,lastGroup, IKSoftCON, limbName
 
     
 
-def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint, IKarmStrCON):
+def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint, IKStrCON, limbName):
 
-    IKupperLenFLM = mc.createNode('floatMath', n='IK_upperLenFLM')
-    IKlowerLenFLM = mc.createNode('floatMath', n='IK_lowerLenFLM')
-    IKarmFullLenFLM = mc.createNode('floatMath', n='IK_armFullLenFLM')
+    IKupperLenFLM = mc.createNode('floatMath', n=f'IK_{limbName}upperLenFLM')
+    IKlowerLenFLM = mc.createNode('floatMath', n=f'IK_{limbName}lowerLenFLM')
+    IKlimbFullLenFLM = mc.createNode('floatMath', n=f'IK_{limbName}FullLenFLM')
     mc.setAttr(IKupperLenFLM + '.operation', 2) #MULTIPLY
     mc.setAttr(IKlowerLenFLM + '.operation', 2) #MULTIPLY
-    mc.setAttr(IKarmFullLenFLM + '.operation', 0) #ADD
+    mc.setAttr(IKlimbFullLenFLM + '.operation', 0) #ADD
     mc.connectAttr(listControls[0] + '.upperLenMult', IKupperLenFLM + '.floatA')
     mc.connectAttr(listControls[0] + '.lowerLenMult', IKlowerLenFLM + '.floatA')
 
@@ -310,72 +310,72 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint, IKar
     translateB = mc.getAttr(f"{listJoints[1][2]}.translateX")
     mc.setAttr(IKupperLenFLM + '.floatB', translateA)
     mc.setAttr(IKlowerLenFLM + '.floatB', translateB)
-    mc.connectAttr(IKupperLenFLM + '.outFloat', IKarmFullLenFLM + '.floatA')
-    mc.connectAttr(IKlowerLenFLM + '.outFloat', IKarmFullLenFLM + '.floatB')
+    mc.connectAttr(IKupperLenFLM + '.outFloat', IKlimbFullLenFLM + '.floatA')
+    mc.connectAttr(IKlowerLenFLM + '.outFloat', IKlimbFullLenFLM + '.floatB')
   
-    IKarmDisToCTLDBT = mc.createNode('distanceBetween', n='IK_armDisToCTLDBT')
-    mc.connectAttr(listControls[2] + '.worldMatrix[0]', IKarmDisToCTLDBT + '.inMatrix1')
-    mc.connectAttr(listControls[0] + '.worldMatrix[0]', IKarmDisToCTLDBT + '.inMatrix2')
+    IKlimbDisToCTLDBT = mc.createNode('distanceBetween', n=f'IK_{limbName}DisToCTLDBT')
+    mc.connectAttr(listControls[2] + '.worldMatrix[0]', IKlimbDisToCTLDBT + '.inMatrix1')
+    mc.connectAttr(listControls[0] + '.worldMatrix[0]', IKlimbDisToCTLDBT + '.inMatrix2')
 
-    IKarmDisToCTLNormalFML = floatMConnect('IK_armDisToCTLNormalFML', 3, IKarmDisToCTLDBT + '.distance', None)
-    mc.setAttr(IKarmDisToCTLNormalFML + '.floatB', 1) #materwalk_CTL.globalscale
+    IKlimbDisToCTLNormalFML = floatMConnect(f'IK_{limbName}DisToCTLNormalFML', 3, IKlimbDisToCTLDBT + '.distance', None)
+    mc.setAttr(IKlimbDisToCTLNormalFML + '.floatB', 1) #materwalk_CTL.globalscale
     
     #Getting the value for armSotfValueRMV.maxOutput
-    valueA = mc.getAttr(IKarmFullLenFLM + '.outFloat')
-    valueB = mc.getAttr(IKarmDisToCTLDBT + '.distance')
+    valueA = mc.getAttr(IKlimbFullLenFLM + '.outFloat')
+    valueB = mc.getAttr(IKlimbDisToCTLDBT + '.distance')
 
 
-    IKarmSoftValueRMV = mc.createNode('remapValue', n='IK_armSoftValueRMV')
-    mc.connectAttr(listControls[0] + '.soft', IKarmSoftValueRMV + '.inputValue')
-    mc.setAttr(IKarmSoftValueRMV + '.outputMin', 0.001)
-    mc.setAttr(IKarmSoftValueRMV + '.inputMax', 1.0)
-    mc.setAttr(IKarmSoftValueRMV + '.outputMax', valueA - valueB)
+    IKlimbSoftValueRMV = mc.createNode('remapValue', n=f'IK_{limbName}SoftValueRMV')
+    mc.connectAttr(listControls[0] + '.soft', IKlimbSoftValueRMV + '.inputValue')
+    mc.setAttr(IKlimbSoftValueRMV + '.outputMin', 0.001)
+    mc.setAttr(IKlimbSoftValueRMV + '.inputMax', 1.0)
+    mc.setAttr(IKlimbSoftValueRMV + '.outputMax', valueA - valueB)
     
 
-    IKarmSoftDisFLM = floatMConnect('IK_armSoftDisFLM', 1, IKarmFullLenFLM + '.outFloat', IKarmSoftValueRMV + '.outValue')
-    IKarmDisToCTLMinSDisFLM = floatMConnect('IK_armDisToCTLMinSDisFLM', 1, IKarmDisToCTLNormalFML + '.outFloat', IKarmSoftDisFLM + '.outFloat')
-    IKarmDisToCTLMinSDisDivSoftFLM = floatMConnect('IK_armDisToCTLMinSDisDivSoftFLM', 3, IKarmDisToCTLMinSDisFLM + '.outFloat', IKarmSoftValueRMV + '.outValue')
+    IKlimbSoftDisFLM = floatMConnect(f'IK_{limbName}SoftDisFLM', 1, IKlimbFullLenFLM + '.outFloat', IKlimbSoftValueRMV + '.outValue')
+    IKlimbDisToCTLMinSDisFLM = floatMConnect(f'IK_{limbName}DisToCTLMinSDisFLM', 1, IKlimbDisToCTLNormalFML + '.outFloat', IKlimbSoftDisFLM + '.outFloat')
+    IKlimbDisToCTLMinSDisDivSoftFLM = floatMConnect(f'IK_{limbName}DisToCTLMinSDisDivSoftFLM', 3, IKlimbDisToCTLMinSDisFLM + '.outFloat', IKlimbSoftValueRMV + '.outValue')
 
-    IKminusCalculateFLM = floatMConnect('IK_minusCalculateFLM', 2, IKarmDisToCTLMinSDisDivSoftFLM + '.outFloat', None)
+    IKminusCalculateFLM = floatMConnect(f'IK_{limbName}minusCalculateFLM', 2, IKlimbDisToCTLMinSDisDivSoftFLM + '.outFloat', None)
     mc.setAttr(IKminusCalculateFLM + '.floatB', -1.0)
 
-    IKarmSoftEPowerFML = floatMConnect('IK_armSoftEPowerFML', 6, None, IKminusCalculateFLM + '.outFloat')
-    mc.setAttr(IKarmSoftEPowerFML + '.floatA', math.e)
+    IKlimbSoftEPowerFML = floatMConnect(f'IK_{limbName}SoftEPowerFML', 6, None, IKminusCalculateFLM + '.outFloat')
+    mc.setAttr(IKlimbSoftEPowerFML + '.floatA', math.e)
     
-    IKarmSoftOneMinusEPowerFML = floatMConnect('IK_armSoftOneMinusEPowerFML', 1, None, IKarmSoftEPowerFML + '.outFloat')
-    mc.setAttr(IKarmSoftOneMinusEPowerFML + '.floatA', 1)
+    IKlimbSoftOneMinusEPowerFML = floatMConnect(f'IK_{limbName}SoftOneMinusEPowerFML', 1, None, IKlimbSoftEPowerFML + '.outFloat')
+    mc.setAttr(IKlimbSoftOneMinusEPowerFML + '.floatA', 1)
     
-    IKarmCalculateSoftValueMultFML = floatMConnect('IK_armCalculateSoftValueMultFML', 2, IKarmSoftValueRMV + '.outValue', IKarmSoftOneMinusEPowerFML + '.outFloat')
+    IKlimbCalculateSoftValueMultFML = floatMConnect(f'IK_{limbName}CalculateSoftValueMultFML', 2, IKlimbSoftValueRMV + '.outValue', IKlimbSoftOneMinusEPowerFML + '.outFloat')
 
     # --------------------- RESULT OF THE FIRST FORMULA ------------------------------
-    IKarmSoftConstantFML = floatMConnect('IK_armSoftConstantFML', 0, IKarmCalculateSoftValueMultFML + '.outFloat', IKarmSoftDisFLM + '.outFloat')
+    IKlimbSoftConstantFML = floatMConnect(f'IK_{limbName}SoftConstantFML', 0, IKlimbCalculateSoftValueMultFML + '.outFloat', IKlimbSoftDisFLM + '.outFloat')
     
     # --------------------- RESULT OF THE SECOND FORMULA ------------------------------
-    IKarmSoftRatioFML = floatMConnect('IK_armSoftRatioFML', 3, IKarmSoftConstantFML + '.outFloat', IKarmFullLenFLM + '.outFloat')
+    IKlimbSoftRatioFML = floatMConnect(f'IK_{limbName}SoftRatioFML', 3, IKlimbSoftConstantFML + '.outFloat', IKlimbFullLenFLM + '.outFloat')
     
     # --------------------- RESULT OF THE THIRD FORMULA ------------------------------
-    IKarmLenRatioFML = floatMConnect('IK_armLenRatioFML', 3, IKarmDisToCTLNormalFML + '.outFloat', IKarmFullLenFLM + '.outFloat')
+    IKlimbLenRatioFML = floatMConnect(f'IK_{limbName}LenRatioFML', 3, IKlimbDisToCTLNormalFML + '.outFloat', IKlimbFullLenFLM + '.outFloat')
 
     # --------------------- RESULT OF THE FOURTH FORMULA ------------------------------
-    IKarmDisToCTLDivLenRatioFML = floatMConnect('IK_armDisToCTLDivLenRatioFML', 3, IKarmDisToCTLNormalFML + '.outFloat', IKarmLenRatioFML + '.outFloat')
-    IKarmSoftEffectorDisFML = floatMConnect('IK_armSoftEffectorDisFML', 2, IKarmSoftRatioFML + '.outFloat', IKarmDisToCTLDivLenRatioFML + '.outFloat')
+    IKlimbDisToCTLDivLenRatioFML = floatMConnect(f'IK_{limbName}DisToCTLDivLenRatioFML', 3, IKlimbDisToCTLNormalFML + '.outFloat', IKlimbLenRatioFML + '.outFloat')
+    IKlimbSoftEffectorDisFML = floatMConnect(f'IK_{limbName}SoftEffectorDisFML', 2, IKlimbSoftRatioFML + '.outFloat', IKlimbDisToCTLDivLenRatioFML + '.outFloat')
 
     
-    IKarmSoftCON = mc.createNode('condition', n='IK_armSoftCON')
-    mc.setAttr(IKarmSoftCON + '.operation', 2) #GREATER THAN
-    mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmSoftCON + '.firstTerm')
-    mc.connectAttr(IKarmSoftDisFLM + '.outFloat', IKarmSoftCON + '.secondTerm')
-    mc.connectAttr(IKarmSoftEffectorDisFML + '.outFloat', IKarmSoftCON + '.colorIfTrueR')
-    mc.connectAttr(IKarmDisToCTLNormalFML + '.outFloat', IKarmSoftCON + '.colorIfFalseR')
+    IKlimbSoftCON = mc.createNode('condition', n=f'IK_{limbName}SoftCON')
+    mc.setAttr(IKlimbSoftCON + '.operation', 2) #GREATER THAN
+    mc.connectAttr(IKlimbDisToCTLNormalFML + '.outFloat', IKlimbSoftCON + '.firstTerm')
+    mc.connectAttr(IKlimbSoftDisFLM + '.outFloat', IKlimbSoftCON + '.secondTerm')
+    mc.connectAttr(IKlimbSoftEffectorDisFML + '.outFloat', IKlimbSoftCON + '.colorIfTrueR')
+    mc.connectAttr(IKlimbDisToCTLNormalFML + '.outFloat', IKlimbSoftCON + '.colorIfFalseR')
 
     
-    lastGroup = create.createGroupStructure('OFF;TRN','IK_armSoft', None)
-    mainGroup = 'IK_armSoft_OFF'
+    lastGroup = create.createGroupStructure('OFF;TRN',f'IK_{limbName}Soft', None)
+    mainGroup = f'IK_{limbName}Soft_OFF'
     mc.matchTransform(mainGroup, listJoints[1][0])
     
     mc.aimConstraint(listControls[0], mainGroup, o=[0,0,0], aim=[1,0,0], wut="none")
     
-    mc.connectAttr(IKarmSoftCON + '.outColorR', lastGroup + '.translateX')
+    mc.connectAttr(IKlimbSoftCON + '.outColorR', lastGroup + '.translateX')
 
     mc.cycleCheck(e=False)
     mc.delete(tempConstraint) #Will create another parent later
@@ -392,34 +392,34 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint, IKar
 
 
     # -------------- SOFT TOLERANCE ---------------------------- DEPENDS FROM STRETCH
-    IKarmDisToCTLDivSEffectorFML = floatMConnect('IK_armDisToCTLDivSEffectorFML', 3, IKarmDisToCTLNormalFML + '.outFloat', IKarmSoftEffectorDisFML + '.outFloat')
-    IKarmDisToCTLDivSEffectorMinusFML = floatMConnect('IK_armDisToCTLDivSEffectorMinusFML', 1, IKarmDisToCTLDivSEffectorFML + '.outFloat', None)
-    mc.setAttr(IKarmDisToCTLDivSEffectorMinusFML + '.floatB', 1.0)
+    IKlimbDisToCTLDivSEffectorFML = floatMConnect(f'IK_{limbName}DisToCTLDivSEffectorFML', 3, IKlimbDisToCTLNormalFML + '.outFloat', IKlimbSoftEffectorDisFML + '.outFloat')
+    IKlimbDisToCTLDivSEffectorMinusFML = floatMConnect(f'IK_{limbName}DisToCTLDivSEffectorMinusFML', 1, IKlimbDisToCTLDivSEffectorFML + '.outFloat', None)
+    mc.setAttr(IKlimbDisToCTLDivSEffectorMinusFML + '.floatB', 1.0)
 
-    IKarmDisToCTLDivSEffectorMultipliedFML = floatMConnect('IK_armDisToCTLDivSEffectorMultipliedFML', 2, IKarmDisToCTLDivSEffectorMinusFML + '.outFloat', listControls[0] + '.stretch')
-    stretchFactorFML = floatMConnect('IK_armDisToCTLDivSEffectorMultipliedFML', 0, IKarmDisToCTLDivSEffectorMultipliedFML + '.outFloat', None)
+    IKlimbDisToCTLDivSEffectorMultipliedFML = floatMConnect(f'IK_{limbName}DisToCTLDivSEffectorMultipliedFML', 2, IKlimbDisToCTLDivSEffectorMinusFML + '.outFloat', listControls[0] + '.stretch')
+    stretchFactorFML = floatMConnect(f'IK_{limbName}DisToCTLDivSEffectorMultipliedFML', 0, IKlimbDisToCTLDivSEffectorMinusFML + '.outFloat', None)
     mc.setAttr(stretchFactorFML + '.floatB', 1.0)
 
-    IKarmSoftEffStretchDisFML = floatMConnect('IK_armSoftEffStretchDisFML', 2, IKarmSoftEffectorDisFML + '.outFloat', stretchFactorFML + '.outFloat')
+    IKlimbSoftEffStretchDisFML = floatMConnect(f'IK_{limbName}SoftEffStretchDisFML', 2, IKlimbSoftEffectorDisFML + '.outFloat', stretchFactorFML + '.outFloat')
 
-    IKarmUpperLenStretchFLM = floatMConnect('IK_armUpperLenStretchFLM', 2, IKupperLenFLM + '.outFloat', stretchFactorFML + '.outFloat')
-    IKarmLowerLenStretchFLM = floatMConnect('IK_armLowerLenStretchFLM', 2, IKlowerLenFLM + '.outFloat', stretchFactorFML + '.outFloat')
+    IKlimbUpperLenStretchFLM = floatMConnect(f'IK_{limbName}UpperLenStretchFLM', 2, IKupperLenFLM + '.outFloat', stretchFactorFML + '.outFloat')
+    IKlimbLowerLenStretchFLM = floatMConnect(f'IK_{limbName}LowerLenStretchFLM', 2, IKlowerLenFLM + '.outFloat', stretchFactorFML + '.outFloat')
 
-    mc.disconnectAttr(IKarmSoftEffectorDisFML + '.outFloat', IKarmSoftCON + '.colorIfTrueR')
-    mc.connectAttr(IKarmSoftEffStretchDisFML + '.outFloat', IKarmSoftCON + '.colorIfTrueR')
-    mc.connectAttr(IKarmUpperLenStretchFLM + '.outFloat', IKarmSoftCON + '.colorIfTrueG')
-    mc.connectAttr(IKarmLowerLenStretchFLM + '.outFloat', IKarmSoftCON + '.colorIfTrueB')
+    mc.disconnectAttr(IKlimbSoftEffectorDisFML + '.outFloat', IKlimbSoftCON + '.colorIfTrueR')
+    mc.connectAttr(IKlimbSoftEffStretchDisFML + '.outFloat', IKlimbSoftCON + '.colorIfTrueR')
+    mc.connectAttr(IKlimbUpperLenStretchFLM + '.outFloat', IKlimbSoftCON + '.colorIfTrueG')
+    mc.connectAttr(IKlimbLowerLenStretchFLM + '.outFloat', IKlimbSoftCON + '.colorIfTrueB')
 
-    mc.connectAttr(IKupperLenFLM + '.outFloat', IKarmSoftCON + '.colorIfFalseG')
-    mc.connectAttr(IKlowerLenFLM + '.outFloat', IKarmSoftCON + '.colorIfFalseB')
+    mc.connectAttr(IKupperLenFLM + '.outFloat', IKlimbSoftCON + '.colorIfFalseG')
+    mc.connectAttr(IKlowerLenFLM + '.outFloat', IKlimbSoftCON + '.colorIfFalseB')
 
-    mc.disconnectAttr(IKarmStrCON + '.outColorR', listJoints[1][1] + '.translateX')
-    mc.disconnectAttr(IKarmStrCON + '.outColorG', listJoints[1][2] + '.translateX')
+    mc.disconnectAttr(IKStrCON + '.outColorR', listJoints[1][1] + '.translateX')
+    mc.disconnectAttr(IKStrCON + '.outColorG', listJoints[1][2] + '.translateX')
 
-    mc.connectAttr(IKarmSoftCON + '.outColorG', listJoints[1][1] + '.translateX')
-    mc.connectAttr(IKarmSoftCON + '.outColorB', listJoints[1][2] + '.translateX')
+    mc.connectAttr(IKlimbSoftCON + '.outColorG', listJoints[1][1] + '.translateX')
+    mc.connectAttr(IKlimbSoftCON + '.outColorB', listJoints[1][2] + '.translateX')
 
-    return IKarmSoftCON, lastGroup
+    return IKlimbSoftCON, lastGroup
 
 
 def generateIKStretchNodes(listJoints, listControls, limbName):
@@ -630,12 +630,12 @@ def createTwistStructure(jointsList, part, typePop):
     RollJoints[0] = mc.rename(RollJoints[0], f'{part}Roll01_JNT')
     RollJoints[1] = mc.rename(RollJoints[1], f'{part}Roll02_JNT')
 
-    armUpperNonRollHDL = mc.ikHandle(name=f'{part}NonRoll_HDL', sol='ikSCsolver', sj=NonRollJoints[0], ee=NonRollJoints[1])[0]
-    armUpperRollHDL = mc.ikHandle(name=f'{part}Roll_HDL', sol='ikSCsolver', sj=RollJoints[0], ee=RollJoints[1])[0]
+    limbUpperNonRollHDL = mc.ikHandle(name=f'{part}NonRoll_HDL', sol='ikSCsolver', sj=NonRollJoints[0], ee=NonRollJoints[1])[0]
+    limbUpperRollHDL = mc.ikHandle(name=f'{part}Roll_HDL', sol='ikSCsolver', sj=RollJoints[0], ee=RollJoints[1])[0]
     
 
-    mc.pointConstraint(jointsList[1], armUpperNonRollHDL)
-    mc.parentConstraint(jointsList[1], armUpperRollHDL, mo=True)
+    mc.pointConstraint(jointsList[1], limbUpperNonRollHDL)
+    mc.parentConstraint(jointsList[1], limbUpperRollHDL, mo=True)
     mc.parent(RollJoints[0],NonRollJoints[0])
 
     return NonRollJoints, RollJoints
