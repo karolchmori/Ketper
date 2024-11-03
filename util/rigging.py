@@ -102,10 +102,75 @@ def getObjByInternalName(internalName):
         if originalName and originalName == internalName:
             newObject = obj
             return newObject
+        
 
 
+#region Digits Related
+def createCurveDigits(nameCurve, numCvs):
+    start_pos=(0, 0, 0)
+    length = 2
+    segmentLength = length / (numCvs - 1)
+    cvPositions = [(start_pos[0] + i * segmentLength, start_pos[1] , start_pos[2]) for i in range(numCvs)]
+
+    curve = mc.curve(name=nameCurve, degree=1, point=cvPositions)
+    addInternalName(curve, nameCurve)
+
+    return curve
+
+def createDigitsChain(obj):
+
+    originalObj = getObjByInternalName(obj)
+    mainName = naming.modifyName('replace',originalObj,'_CRV', '')
+
+    numCvs = mc.getAttr(f"{originalObj}.degree") + mc.getAttr(f"{originalObj}.spans")
+
+    # Create a chain of joints based on the CV positions
+    jointChain = []
+    
+    for i in range(numCvs):
+        # Get the position of each CV
+        cvPos = mc.pointPosition(f"{originalObj}.cv[{i}]", world=True)
+
+        mc.select(cl=True)
+        # Create a joint at that position
+        joint = mc.joint(name=f"{mainName}_0{i+1}_JNT", p=cvPos)
+        mc.select(cl=True)
+        jointChain.append(joint)
+
+    mc.delete(originalObj)
+    
+    #Orientation
+    for i in range(1, len(jointChain)):
+        if i != len(jointChain) and (i+1) <= (len(jointChain))-1:
+            mc.aimConstraint(jointChain[i],jointChain[i-1], wut='object', wuo=jointChain[i+1], aim=(1,0,0), u=(0,0,1))
+        else:
+            mc.aimConstraint(jointChain[i],jointChain[i-1], wut='object', wuo=jointChain[0], aim=(1,0,0), u=(0,0,1))
+        mc.delete( f"{jointChain[i-1]}_aimConstraint1")
+    
+    #Freeze transformation in rotation
+    mc.select(jointChain)
+    mc.makeIdentity(apply=True, rotate=True )
+    mc.select(cl=True)
+
+
+    for i in reversed(range(1, len(jointChain))):
+        mc.parent(jointChain[i],jointChain[i-1])
+
+    
+    #Clear JointOrients of last joint (Important to do it at the end)
+    nullJointOrients(jointChain[len(jointChain)-1])
+    
+    return jointChain
+    
+
+    
+    
+
+#endregion
 
 #region Limb Related
+
+
 
 def createLocatorLimb():
     locatorNames = ['root_LOC','mid_LOC', 'end_LOC']

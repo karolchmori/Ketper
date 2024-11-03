@@ -8,6 +8,10 @@ limbLocators = []
 limbJoints = []
 limbDict = ['arm','leg']
 
+digitsStructures = []
+digitsJoints = []
+digitsLocator = None
+
 
 def page(mainWidth, mainHeight):
 
@@ -21,17 +25,22 @@ def page(mainWidth, mainHeight):
     mc.setParent('..') # End rowLayout
 
     mc.textField('structureNameTXT', w=mainWidth/2, placeholderText='Leave empty to use first selection name')
-    limbSectionWidth = mainWidth/4
+    limbSectionWidth = mainWidth/3-10
     mc.setParent('..') # End frameLayout
+
+    mc.rowLayout(nc=2)
+    # ----------------------------------------------------------------------
+    # ------------------------------- LIMBS --------------------------------
+    # ----------------------------------------------------------------------
     mc.frameLayout(label='Limbs', collapsable=False, collapse=False, marginWidth=5, marginHeight=5)
     mc.rowLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Create Locators: ')
-    mc.button('limbLocButton', l='GO', c=lambda _: createLocatorLimb())
+    mc.button('limbLocButton', l='GO', c=lambda _: createStructureLimb())
     mc.setParent('..') # End rowLayout
 
-    elUI.separatorTitleUI('Features',5,20,mainWidth/2-50)
-    limbsCol, limbsRadioButtons = elUI.radioCollectionUIHorizontal('', limbDict, limbDict[0])
-    mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
+    elUI.separatorTitleUI('Features',5,20,mainWidth/2-20)
+    mc.rowLayout(nc=2)
+    mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'right']), cw=[(1, limbSectionWidth/1.5), (2, limbSectionWidth/2.5)])
     mc.text(l='IK/FK')
     mc.checkBox('featLimbIKFK', l='', en=False, cc=limbFeatIKFKChanged)
     mc.text(l='Stretch')
@@ -43,6 +52,8 @@ def page(mainWidth, mainHeight):
     mc.text(l='Curvature')
     mc.checkBox('featLimbCurv', l='', en=False)
     mc.setParent('..') # End rowColumnLayout
+    limbsCol, limbsRadioButtons = elUI.radioCollectionUI('', limbDict, limbDict[0])
+    mc.setParent('..') # End rowLayout
 
     mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Create Joints: ')
@@ -51,8 +62,93 @@ def page(mainWidth, mainHeight):
     mc.button('limbResetButton', l='Restart', c=lambda _: restartLimbChain(), en=False)
     
     mc.setParent('..') # End frameLayout
+
+    # ----------------------------------------------------------------------
+    # ------------------------------- DIGITS --------------------------------
+    # ----------------------------------------------------------------------
+    mc.frameLayout(label='Digits', collapsable=False, collapse=False, marginWidth=5, marginHeight=5)
+    mc.rowLayout(nc=4)
+    mc.text(l='Digits: ')
+    mc.textField('numDigitsTXT', tx='2', w= 40)
+    mc.text(l=' Joints: ')
+    mc.textField('numJointsTXT', tx='3', w= 40)
+    mc.setParent('..') # End rowLayout
+    mc.rowLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
+    mc.text(l='Create curves: ')
+    mc.button('limbCurveButton', l='GO', c=lambda _: createStructureDigits())
+    mc.setParent('..') # End rowLayout
+
+    mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
+    mc.text(l='Create Joints: ')
+    mc.button('digitCreateButton', l='GO', c=lambda _: createDigitsJoints(digitsStructures))
+    mc.setParent('..') # End rowColumnLayout
+
+    mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
+    mc.text(l='Connect: ')
+    mc.button( l='GO', c=lambda _:createDigitsConnection(digitsLocator, digitsJoints))
+    mc.setParent('..') # End rowColumnLayout
+    
+    mc.button('digitsResetButton', l='Restart', c=lambda _: restartDigitsChain())
+    mc.setParent('..') # End frameLayout
+
+
+    mc.setParent('..') # End rowLayout
     mc.setParent( '..' ) # End columnLayout  
     return child
+
+
+#region DIGITS
+def createStructureDigits():
+    global digitsStructures
+    digits = int(mc.textField('numDigitsTXT', q=True, tx=True))
+    numJoints = int(mc.textField('numJointsTXT', q=True, tx=True))
+
+    for i in range(digits):
+        digitsStructures.append(util.rigging.createCurveDigits(f'digit{i+1}_CRV', numJoints))
+
+
+def createDigitsJoints(digitsStructures):
+    global digitsJoints
+    global digitsLocator
+
+    for i in range(len(digitsStructures)):
+        digitsJoints.append(util.rigging.createDigitsChain(digitsStructures[i]))
+
+    digitsLocator = mc.spaceLocator(n='connect_LOC')[0]
+    util.rigging.addInternalName(digitsLocator, digitsLocator)
+
+def createDigitsConnection(digitsLocator, digitsJoints):
+
+    locatorPos = util.rigging.getPosition(digitsLocator)
+    originalObj = util.rigging.getObjByInternalName(digitsLocator)
+
+    mc.select(cl=True)
+    connectionJoint = mc.joint(p=locatorPos, name = originalObj)
+    mc.select(cl=True)
+
+    print(digitsJoints)
+
+    for i in range(len(digitsJoints)):
+        mc.parent(digitsJoints[i][0], connectionJoint)
+
+    mc.delete(digitsLocator)
+
+
+def restartDigitsChain():
+    global digitsStructures
+    global digitsJoints
+    global digitsLocator
+    digitsStructures = []
+    digitsJoints = []
+    digitsLocator = None
+
+    util.select.setfocusMaya()
+
+#endregion
+
+
+
+#region LIMB
 
 def limbFeatIKFKChanged(*args):
     if mc.checkBox('featLimbIKFK', query=True, value=True):
@@ -72,7 +168,7 @@ def limbFeatSoftChanged(*args):
     else:
         util.select.modifyCheckBoxList(['featLimbPVPin'], False, False)
 
-def createLocatorLimb():
+def createStructureLimb():
     global limbLocators
     limbLocators = util.rigging.createLocatorLimb()
     mc.button('limbLocButton', e=True, en=False)
@@ -283,6 +379,11 @@ def restartLimbChain():
     mc.button('limbLocButton', e=True, en=True)
     util.select.modifyButtonList(['limbCreateButton','limbResetButton'], False)
     util.select.modifyCheckBoxList(['featLimbIKFK', 'featLimbStretch', 'featLimbSoft', 'featLimbPVPin', 'featLimbCurv'], False, False)
+    util.select.setfocusMaya()
+
+#endregion
+
+#region OTHER
 
 def createCTLStructure():
     selectedObjects = mc.ls(selection=True)
@@ -297,3 +398,7 @@ def createCTLStructure():
 
         for obj in selectedObjects:
             mc.parent(obj, lastGroup)
+
+    util.select.setfocusMaya()
+
+#endregion
