@@ -133,7 +133,7 @@ def createLimbJoints():
         mc.parentConstraint(listControlsIK[2], limbJoints[1][0], sr=["x","z","y"], w=1)
 
         # ------------------------------ NODES ----------------------------------
-        IKlimbStrCON = util.rigging.generateIKStretchNodes(limbJoints, listControlsIK)
+        IKlimbStrCON = util.rigging.generateIKStretchNodes(limbJoints, listControlsIK, limbName)
 
         if soft:
             # ----------------------------------------------------------------------
