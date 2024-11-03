@@ -6,6 +6,7 @@ import math
 
 limbLocators = []
 limbJoints = []
+limbDict = ['arm','leg']
 
 
 def page(mainWidth, mainHeight):
@@ -29,7 +30,7 @@ def page(mainWidth, mainHeight):
     mc.setParent('..') # End rowLayout
 
     elUI.separatorTitleUI('Features',5,20,mainWidth/2-50)
-
+    limbsCol, limbsRadioButtons = elUI.radioCollectionUIHorizontal('', limbDict, limbDict[0])
     mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='IK/FK')
     mc.checkBox('featLimbIKFK', l='', en=False, cc=limbFeatIKFKChanged)
@@ -45,7 +46,7 @@ def page(mainWidth, mainHeight):
 
     mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Create Joints: ')
-    mc.button('limbCreateButton', l='GO', c=lambda _: createLimbJoints(), en=False)
+    mc.button('limbCreateButton', l='GO', c=lambda _: createLimbJoints(limbsRadioButtons), en=False)
     mc.setParent('..') # End rowColumnLayout
     mc.button('limbResetButton', l='Restart', c=lambda _: restartLimbChain(), en=False)
     
@@ -82,7 +83,7 @@ def createLocatorLimb():
     util.select.setfocusMaya()
 
 
-def createLimbJoints():
+def createLimbJoints(limbsRadio):
     global limbJoints
     groupStructure = 'GRP;ANIM;OFFSET'
     firstGroup = groupStructure.split(';')[0]
@@ -93,7 +94,12 @@ def createLimbJoints():
     curvature = mc.checkBox('featLimbCurv', q=True, v=True)
     twist = False
 
-    limbName = 'test'
+    #GET SCOPE
+    limbName = None
+    for button in limbsRadio:
+        if mc.radioButton(button, query=True, select=True):
+            limbName = mc.radioButton(button, query=True, label=True)
+            break
 
     #Create limb and duplicate to IK and FK
     limbJoints.append(util.rigging.createLimbChain(limbLocators))
@@ -205,7 +211,7 @@ def createLimbJoints():
     
     tempGroup = f'{limbName}_Preferences_Controls_' + firstGroup
     mc.matchTransform(tempGroup, limbJoints[0][0], pos=True)
-    mc.move(0, 4, 0, tempGroup, relative=True)
+    mc.move(0, 4, -10, tempGroup, relative=True)
 
     #Add attribute and visibility with controls
     mc.select(controlName)
@@ -236,26 +242,26 @@ def createLimbJoints():
     # ----------------------------------------------------------------------
     if twist:
         detachCurve = mc.detachCurve(curve2Degree, p=0.5, rpo=False, ch=True) #Important to keep the ch
-        armUpperSegCRV = detachCurve[0]
-        armLowerSegCRV = detachCurve[1]
-        armUpperSegCRV = mc.rename(armUpperSegCRV, 'armUpperSeg_CRV')
-        armLowerSegCRV = mc.rename(armLowerSegCRV, 'armLowerSeg_CRV')
-        armUpperSegCRVShape = mc.listRelatives(armUpperSegCRV, shapes=True)[0]
+        limbUpperSegCRV = detachCurve[0]
+        limbLowerSegCRV = detachCurve[1]
+        limbUpperSegCRV = mc.rename(limbUpperSegCRV, f'{limbName}UpperSeg_CRV')
+        limbLowerSegCRV = mc.rename(limbLowerSegCRV, f'{limbName}LowerSeg_CRV')
+        limbUpperSegCRVShape = mc.listRelatives(limbUpperSegCRV, shapes=True)[0]
         rangeTwist = 5
         
         nodeFCList = util.rigging.createFloatConstant([0.001, 0.25, 0.5, 0.75, 0.999])
         
         #TODO add a parent to NonRoll01 --> driver is joint01 Original
 
-        armUpperMPANodes = util.rigging.createMPACurveJNT(rangeTwist, 'armUpperTwist0', armUpperSegCRVShape, nodeFCList)
-        armUpperNonRollJoints, armUpperRollJoints = util.rigging.createTwistStructure(limbJoints[0], 'armUpper', 'end')
+        limbUpperMPANodes = util.rigging.createMPACurveJNT(rangeTwist, f'{limbName}UpperTwist0', limbUpperSegCRVShape, nodeFCList)
+        limbUpperNonRollJoints, limbUpperRollJoints = util.rigging.createTwistStructure(limbJoints[0], f'{limbName}Upper', 'end')
 
-        for i in range(len(armUpperMPANodes)):
-            mc.setAttr(armUpperMPANodes[i] + ".worldUpType", 2)
-            mc.connectAttr(armUpperNonRollJoints[0]+'.worldMatrix[0]', armUpperMPANodes[i] + ".worldUpMatrix")
+        for i in range(len(limbUpperMPANodes)):
+            mc.setAttr(limbUpperMPANodes[i] + ".worldUpType", 2)
+            mc.connectAttr(limbUpperNonRollJoints[0]+'.worldMatrix[0]', limbUpperMPANodes[i] + ".worldUpMatrix")
 
-            node = util.rigging.floatMConnect(f'armUpper{i+1}FLM', 2, nodeFCList[i] + '.outFloat', armUpperRollJoints[0] +'.rotateX')
-            mc.connectAttr(node + ".outFloat", armUpperMPANodes[i] + '.frontTwist')
+            node = util.rigging.floatMConnect(f'{limbName}Upper{i+1}FLM', 2, nodeFCList[i] + '.outFloat', limbUpperRollJoints[0] +'.rotateX')
+            mc.connectAttr(node + ".outFloat", limbUpperMPANodes[i] + '.frontTwist')
 
 
 

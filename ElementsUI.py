@@ -169,4 +169,25 @@ def radioCollectionUI(title, valuesDict, defaultValue):
     mc.setParent( '..' ) # End columnLayout
 
     return searchCol, radioButtons
+
+
+def radioCollectionUIHorizontal(title, valuesDict, defaultValue):
+    mc.rowLayout(nc=2)
+    if title != '':
+        mc.text(title)
+    searchCol = mc.radioCollection()
+    
+    radioButtons = []
+    #We save the button we are going to use as default later
+    for value in valuesDict:
+        tempButton = mc.radioButton(l=value)
+        radioButtons.append(tempButton)
+        if defaultValue == value:
+            defaultBut = tempButton
+
+    mc.radioButton(defaultBut, edit=True, select=True)
+
+    mc.setParent( '..' ) # End rowLayout
+
+    return searchCol, radioButtons
 #endregion
