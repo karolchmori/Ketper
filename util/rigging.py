@@ -320,7 +320,7 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint, IKSt
     IKlimbDisToCTLNormalFML = floatMConnect(f'IK_{limbName}DisToCTLNormalFML', 3, IKlimbDisToCTLDBT + '.distance', None)
     mc.setAttr(IKlimbDisToCTLNormalFML + '.floatB', 1) #materwalk_CTL.globalscale
     
-    #Getting the value for armSotfValueRMV.maxOutput
+    #Getting the value for limbSotfValueRMV.maxOutput
     valueA = mc.getAttr(IKlimbFullLenFLM + '.outFloat')
     valueB = mc.getAttr(IKlimbDisToCTLDBT + '.distance')
 
