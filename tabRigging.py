@@ -81,7 +81,9 @@ def page(mainWidth, mainHeight):
 
     mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Create Joints: ')
-    mc.button('limbCreateButton', l='GO', c=lambda _: createLimbJoints(limbsRadioButtons), en=False)
+    mc.button('limbCreateButton', l='GO', c=lambda _: createLimbJoints(), en=False)
+    mc.text(l='Create Controllers: ')
+    mc.button('limbControlsButton', l='GO', c=lambda _: createLimbControls(limbsRadioButtons), en=False)
     mc.setParent('..') # End rowColumnLayout
     mc.button('limbResetButton', l='Restart', c=lambda _: restartLimbChain(), en=False)
     
@@ -246,8 +248,18 @@ def createStructureLimb():
     util.select.setfocusMaya()
 
 
-def createLimbJoints(limbsRadio):
+def createLimbJoints():
     global limbJoints
+    #Create limb and duplicate to IK and FK
+    limbJoints.append(util.rigging.createLimbChain(limbLocators))
+
+    util.select.modifyButtonList(['limbCreateButton'], True)
+    util.select.modifyButtonList(['limbControlsButton'], True)
+
+
+def createLimbControls(limbsRadio):
+    global limbJoints
+
     groupStructure = 'GRP;ANIM;OFFSET'
     firstGroup = groupStructure.split(';')[0]
 
@@ -264,8 +276,7 @@ def createLimbJoints(limbsRadio):
             limbName = mc.radioButton(button, query=True, label=True)
             break
 
-    #Create limb and duplicate to IK and FK
-    limbJoints.append(util.rigging.createLimbChain(limbLocators))
+    
 
     # ----------------------------------------------------------------------
     # ----------------------------- CREATE IK ------------------------------
@@ -281,7 +292,9 @@ def createLimbJoints(limbsRadio):
 
     #Create groups and parent it. ALSO move PV Control to a position inside the plane
     lastGroup = util.create.createGroupStructure(groupStructure,f'IK_{limbName}_Controls',None)
+
     util.rigging.movePVControl(limbJoints[1], f'IK_{limbName}_PV_' + firstGroup, 4)
+
     mc.parent(f'IK_{limbName}_' + firstGroup, lastGroup)
     mc.parent(f'IK_{limbName}_PV_' + firstGroup, lastGroup)
 
@@ -426,14 +439,14 @@ def createLimbJoints(limbsRadio):
             node = util.rigging.floatMConnect(f'{limbName}Upper{i+1}FLM', 2, nodeFCList[i] + '.outFloat', limbUpperRollJoints[0] +'.rotateX')
             mc.connectAttr(node + ".outFloat", limbUpperMPANodes[i] + '.frontTwist')
 
-
+    
 
     # ----------------------------------------------------------------------
     # ------------------------------- FINAL -------------------------------- 
     # ----------------------------------------------------------------------
 
     #Disable button
-    mc.button('limbCreateButton', e=True, en=False)
+    util.select.modifyButtonList(['limbControlsButton'], False)
     print(limbJoints)
     util.select.setfocusMaya()
 
@@ -444,7 +457,7 @@ def restartLimbChain():
     limbLocators = []
     limbJoints = []
     mc.button('limbLocButton', e=True, en=True)
-    util.select.modifyButtonList(['limbCreateButton','limbResetButton'], False)
+    util.select.modifyButtonList(['limbCreateButton','limbControlsButton','limbResetButton'], False)
     util.select.modifyCheckBoxList(['featLimbIKFK', 'featLimbStretch', 'featLimbSoft', 'featLimbPVPin', 'featLimbCurv'], False, False)
     util.select.setfocusMaya()
 

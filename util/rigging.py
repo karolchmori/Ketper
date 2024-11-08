@@ -214,28 +214,37 @@ def createLimbChain(locatorList):
     
     # When creating a joint without parenting we are also saving the OLD NAME in an attribute
     mc.select(cl=True)
-
-    shoulder = mc.joint(p=positionList[0], name = jointNames[0])
+    #TODO: FIX: The problem is the position
+    mc.joint(p=positionList[0], name = jointNames[0])
     mc.select(cl=True)
 
-    elbow = mc.joint(p=positionList[1],  name = jointNames[1])
+    mc.joint(p=positionList[1],  name = jointNames[1])
     mc.select(cl=True)
 
-    wrist = mc.joint(p=positionList[2], name = jointNames[2])
+    mc.joint(p=positionList[2], name = jointNames[2])
     mc.select(cl=True)
 
-    #Aim Constraints to get the correct orientation
-    mc.aimConstraint(jointNames[1],jointNames[0], wut='object', wuo=jointNames[2], aim=(1,0,0), u=(0,0,1))
-    mc.delete( f"{jointNames[0]}_aimConstraint1")
+    '''
+    1. First set the rotations and joint orients to 0 0 0
+    2. Create a locator that will be above the joint we want to constraint, move the locator in the Y axis
+    3. Do the aim constraint looking at the locator
+    4. Delete constraint and locator
+    '''
+    
+    for i in range(len(jointNames)-1):
+        locatorTemp = mc.spaceLocator()[0]
+        mc.matchTransform(locatorTemp, jointNames[i], scl=False, rot=False, pos=True)
+        mc.move(0, 5, 0, locatorTemp, relative=True)
 
-    mc.aimConstraint(jointNames[2],jointNames[1], wut='object', wuo=jointNames[0], aim=(1,0,0), u=(0,0,1))
-    mc.delete( f"{jointNames[1]}_aimConstraint1")
+        mc.aimConstraint(jointNames[i+1],jointNames[i], wut='object', wuo=locatorTemp, aim=(1,0,0), u=(0,1,0))
+        mc.delete( f"{jointNames[i]}_aimConstraint1", locatorTemp)
 
+    
     #Freeze transformation in rotation
     mc.select(jointNames)
     mc.makeIdentity(apply=True, rotate=True )
     mc.select(cl=True)
-
+    
     #Group them
     mc.parent(jointNames[2],jointNames[1])
     mc.parent(jointNames[1],jointNames[0])
