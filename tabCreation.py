@@ -23,19 +23,20 @@ def page(mainWidth, mainHeight):
     mc.frameLayout(label='Shapes', collapsable=False, collapse=False, marginWidth=5, marginHeight=5)
     mc.columnLayout()
     
+    mc.rowLayout(nc=2)
+    shapeBuildCol, shapeBuildRadioButtons = elUI.radioCollectionUIHorizontal('', ['create','replace'], 'create')
+    mc.button(l="Combine", c=lambda _: util.create.combineObjects())
+    mc.setParent('..') # End rowLayout
+
     # Add buttons with a loop using the dictionary
-    
-    
     mc.rowColumnLayout(nc=4, columnSpacing=[(2, 5), (3, 5), (4, 5)])
 
     for shape in shapesButtonDict:
         mc.iconTextButton(w= 40, h= 40, style='iconOnly', bgc=(0.5, 0.5, 0.5),
-                          image1='icons/'+shape+'.png', l=shape, command=lambda _=None, s=shape: util.create.createShape(s))
+                          image1='icons/'+shape+'.png', l=shape, command=lambda _=None, s=shape: buildShapes(s, shapeBuildRadioButtons))
     
     mc.setParent('..') # End rowColumnLayout
-
-    mc.button(l="Combine", c=lambda _: util.create.combineObjects())
-
+    
     mc.rowLayout(nc=2)
     mc.textField('textCurveTXT', w=100, placeholderText='Write Text to Curves')
     mc.button(l='Generate', c= lambda _: createTextToCurve())
@@ -139,6 +140,22 @@ def page(mainWidth, mainHeight):
 
     return child #important to return all information
 
+def buildShapes(s, shapeBuildRadioButtons):
+    selectedObjects = mc.ls(selection=True)
+
+    for button in shapeBuildRadioButtons:
+        if mc.radioButton(button, query=True, select=True):
+            valueRadio = mc.radioButton(button, query=True, label=True)
+            break
+    
+    if valueRadio == 'create':
+        util.create.createShape(s)
+    elif valueRadio == 'replace':
+        if selectedObjects:
+            for obj in selectedObjects:
+                newObj = util.create.createShape(s)
+                util.create.replaceCurve(obj, newObj)
+    mc.select(cl=True)
 
 def createTextToCurve():
     textC = mc.textField('textCurveTXT', q=True, tx=True)

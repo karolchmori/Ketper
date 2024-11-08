@@ -76,7 +76,7 @@ def createShape(shape):
         mc.xform(myCube,t=(-.5,-.5,-.5))
         mc.select(myCube)
         mc.FreezeTransformations()
-        mc.rename("curve")
+        myCube = mc.rename("curve")
         mc.delete(ch=1)
         result = myCube
 
@@ -93,7 +93,7 @@ def createShape(shape):
     else:
         print("Unknown control shape.")
         
-    return result[0]
+    return result
     
 
 # Combine different shapes into one (has different shapes)
@@ -117,31 +117,22 @@ def combineObjects():
 
     return holder
 
-#REPLACE
-'''def replaceCurves(curves):
-    firstCRV = None
-    for i in range(1,len(curves)):
-        crvShape = mc.listRelatives(curves[i], shapes = True)
-        mc.parent(crvShape,curves[0],s=True,r=True)
-        if i == 1:
-            firstCRV = crvShape[0]
-        
-        mc.delete(curves[i])
-    crvMainShape = mc.listRelatives(curves[0], shapes = True)[0]
-    mc.delete(crvMainShape)
-    #print(firstCRV)
-    mc.rename(firstCRV, crvMainShape)'''
+
 
 def replaceCurve(oldCurve, newCurve):
     firstCRV = None
-    crvShape = mc.listRelatives(newCurve, shapes = True)
-    mc.parent(crvShape,oldCurve,s=True,r=True)
-    firstCRV = crvShape[0]
+    crvOldShape = mc.listRelatives(oldCurve, shapes = True)
+    crvNewShape = mc.listRelatives(newCurve, shapes = True)
+
+    mc.parent(crvNewShape,oldCurve,s=True,r=True)
+    firstCRV = crvNewShape[0]
     mc.delete(newCurve)
         
     crvMainShape = mc.listRelatives(oldCurve, shapes = True)[0]
-    mc.delete(crvMainShape)
-    #print(firstCRV)
+
+    mc.delete(crvOldShape)
+    #mc.delete(crvMainShape)
+
     mc.rename(firstCRV, crvMainShape)
         
 #replaceCurve(['connect_CTL','curve1'])

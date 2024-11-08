@@ -173,11 +173,14 @@ def restartDigitsChain():
     global digitsStructures
     global digitsJoints
     global digitsLocator
+    global listControlsDigits
+    global mainParentCTL
+
     digitsStructures = []
     digitsJoints = []
     digitsLocator = None
     listControlsDigits = []
-    mainParentCTL = None
+    mainParentCTL = []
 
     util.select.setfocusMaya()
 
