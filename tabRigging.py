@@ -20,16 +20,27 @@ mainParentCTL = []
 def page(mainWidth, mainHeight):
 
     child = mc.columnLayout()
-    mc.frameLayout(label='Structure', collapsable=True, collapse=False, marginWidth=5, marginHeight=5)
-    mc.button(l='Generate Structure', c= lambda _: util.rigging.createStructureClass())
+    mc.frameLayout(label='Structure', collapsable=True, collapse=False, marginWidth=5, marginHeight=5, w=mainWidth-10)
+    mc.button(l='Generate Structure', w=mainWidth-40, c= lambda _: util.rigging.createStructureClass())
 
-    mc.rowLayout(nc=3)
-    mc.textField('structureTXT', w=mainWidth/2, tx='GRP;ANM;OFFSET')
-    mc.button(l='Create Groups', w=90, c= lambda _: createCTLStructure())
+    elUI.separatorTitleUI('Create group CTL',5,20,mainWidth-40)
+    mc.rowLayout(nc=4)
+    mc.textField('structureTXT', w=mainWidth/2+20, tx='GRP;ANM;OFFSET')
+    mc.text(l='')
+    mc.button(l='GO', c= lambda _: createCTLStructure())
+    mc.textField('structureNameTXT', w=120, placeholderText='Controller name')
     mc.setParent('..') # End rowLayout
 
-    mc.textField('structureNameTXT', w=mainWidth/2, placeholderText='Leave empty to use first selection name')
+    
     limbSectionWidth = mainWidth/3-10
+    mc.setParent('..') # End frameLayout
+    # ----------------------------------------------------------------------
+    # ------------------------------- SPINE --------------------------------
+    # ----------------------------------------------------------------------
+
+    mc.frameLayout(label='Spine', collapsable=True, collapse=False, marginWidth=5, marginHeight=5, w=mainWidth-10)
+
+
     mc.setParent('..') # End frameLayout
 
     mc.rowLayout(nc=2)
