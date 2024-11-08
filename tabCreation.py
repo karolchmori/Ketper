@@ -23,33 +23,30 @@ def page(mainWidth, mainHeight):
     mc.frameLayout(label='Shapes', collapsable=False, collapse=False, marginWidth=5, marginHeight=5)
     mc.columnLayout()
     
-    mc.rowLayout(nc=2)
+    mc.rowLayout(nc=4)
     shapeBuildCol, shapeBuildRadioButtons = elUI.radioCollectionUIHorizontal('', ['create','replace'], 'create')
     mc.button(l="Combine", c=lambda _: util.create.combineObjects())
+    mc.textField('textCurveTXT', w=120, placeholderText='Write Text to Curves')
+    mc.button(l='Generate', c= lambda _: createTextToCurve())
     mc.setParent('..') # End rowLayout
-
+    mc.text(l='')
     # Add buttons with a loop using the dictionary
-    mc.rowColumnLayout(nc=4, columnSpacing=[(2, 5), (3, 5), (4, 5)])
+    mc.rowColumnLayout(nc=8, columnSpacing=[(2, 5), (3, 5), (4, 5),(5, 5),(6, 5),(7, 5),(8, 5)])
 
     for shape in shapesButtonDict:
         mc.iconTextButton(w= 40, h= 40, style='iconOnly', bgc=(0.5, 0.5, 0.5),
                           image1='icons/'+shape+'.png', l=shape, command=lambda _=None, s=shape: buildShapes(s, shapeBuildRadioButtons))
     
     mc.setParent('..') # End rowColumnLayout
-    
+    mc.text(l='')
+    elUI.separatorTitleUI('Other features',5,20,mainWidth-45)
     mc.rowLayout(nc=2)
-    mc.textField('textCurveTXT', w=100, placeholderText='Write Text to Curves')
-    mc.button(l='Generate', c= lambda _: createTextToCurve())
+    mc.text(l=' Size: ')
+    mc.floatSliderGrp('shapeSizeSlider', field=True, minValue=0.1, maxValue=2, value=1, w=150, pre=2, columnWidth=[(1, 0)],
+                      dragCommand=lambda *args: modifySizeShapes(mc.floatSliderGrp('shapeSizeSlider', query=True, value=True)) if modifySizeShapes else None)
     mc.setParent('..') # End rowLayout
-    mc.setParent('..') # End ColumnLayout
-    mc.setParent('..') # End frameLayout
-
-    # -------------------------------------------------------
-    # ------------------------ COLOR ------------------------
-    # -------------------------------------------------------
-    # A slider with a button that when its clicked changes the curves color
-    frame = mc.frameLayout(l='Color', collapsable=False, collapse=False, marginWidth=5, marginHeight=5)
     slider = elUI.colorSlider()
+    mc.setParent('..') # End ColumnLayout
     mc.setParent('..') # End frameLayout
 
     # -------------------------------------------------------
@@ -139,6 +136,21 @@ def page(mainWidth, mainHeight):
 
 
     return child #important to return all information
+
+
+def modifySizeShapes(multiplier):
+    selectedObjects = mc.ls(selection=True)
+
+    if selectedObjects:
+        for obj in selectedObjects:
+            util.create.changeSizeCurve(obj, multiplier)
+    
+    mc.select(cl=True)
+
+    mc.floatSliderGrp('shapeSizeSlider', edit=True, value=1)
+
+    mc.select(selectedObjects)
+    
 
 def buildShapes(s, shapeBuildRadioButtons):
     selectedObjects = mc.ls(selection=True)

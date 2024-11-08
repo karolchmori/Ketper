@@ -20,6 +20,32 @@ def createGroupStructure(text, mainName, firstParent):
 
     return lastName
 
+
+def changeSizeCurve(obj, multiplier):
+
+    # Get the list of CVs for the specified curve
+    cvs = mc.ls(f"{obj}.cv[*]", flatten=True)
+    if cvs:
+        # Select all CVs of the curve
+        mc.select(cvs, replace=True)
+
+        # Calculate the pivot point as the average position of selected CVs
+        pivot_point = [0.0, 0.0, 0.0]
+        numCvs = len(cvs)
+        for cv in cvs:
+            pos = mc.pointPosition(cv, world=True)
+            pivot_point[0] += pos[0]
+            pivot_point[1] += pos[1]
+            pivot_point[2] += pos[2]
+        
+        # Average out to get the center point
+        pivot_point = [coord / numCvs for coord in pivot_point]
+
+        # Scale the CVs relative to their center pivot point
+        mc.scale(multiplier, multiplier, multiplier, cvs, relative=True, pivot=pivot_point)
+
+
+
 def createTextCurves(text):
     textObject = mc.textCurves(f = 'Arial', t = text)
     # Initialize a list to hold the curves
