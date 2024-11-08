@@ -185,7 +185,7 @@ def createLocatorLimb():
 
     return locatorNames
 
-def createLimbChain(locatorList):
+def createLimbChain(locatorList, limbName):
     
     #We get original internal names ex houlder_LOC and we need to look for the new names ex joint_01_JNT
     newLocatorList = [] #Equals to joint_01_JNT ------- NEW NAME
@@ -230,13 +230,19 @@ def createLimbChain(locatorList):
     3. Do the aim constraint looking at the locator
     4. Delete constraint and locator
     '''
-    
+
     for i in range(len(jointNames)-1):
         locatorTemp = mc.spaceLocator()[0]
         mc.matchTransform(locatorTemp, jointNames[i], scl=False, rot=False, pos=True)
-        mc.move(0, 5, 0, locatorTemp, relative=True)
 
-        mc.aimConstraint(jointNames[i+1],jointNames[i], wut='object', wuo=locatorTemp, aim=(1,0,0), u=(0,1,0))
+        if limbName == 'arm':
+            mc.move(0, 5, 0, locatorTemp, relative=True)
+            mc.aimConstraint(jointNames[i+1],jointNames[i], wut='object', wuo=locatorTemp, aim=(1,0,0), u=(0,1,0))
+
+        elif limbName == 'leg':
+            mc.move(0, 0, 5, locatorTemp, relative=True)
+            mc.aimConstraint(jointNames[i+1],jointNames[i], wut='object', wuo=locatorTemp, aim=(0,1,0), u=(0,0,1))
+
         mc.delete( f"{jointNames[i]}_aimConstraint1", locatorTemp)
 
     

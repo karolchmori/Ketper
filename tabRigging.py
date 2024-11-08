@@ -81,7 +81,7 @@ def page(mainWidth, mainHeight):
 
     mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Create Joints: ')
-    mc.button('limbCreateButton', l='GO', c=lambda _: createLimbJoints(), en=False)
+    mc.button('limbCreateButton', l='GO', c=lambda _: createLimbJoints(limbsRadioButtons), en=False)
     mc.text(l='Create Controllers: ')
     mc.button('limbControlsButton', l='GO', c=lambda _: createLimbControls(limbsRadioButtons), en=False)
     mc.setParent('..') # End rowColumnLayout
@@ -248,10 +248,19 @@ def createStructureLimb():
     util.select.setfocusMaya()
 
 
-def createLimbJoints():
+def createLimbJoints(limbsRadio):
     global limbJoints
+
+    #GET SCOPE
+    limbName = None
+    for button in limbsRadio:
+        if mc.radioButton(button, query=True, select=True):
+            limbName = mc.radioButton(button, query=True, label=True)
+            break
+
+
     #Create limb and duplicate to IK and FK
-    limbJoints.append(util.rigging.createLimbChain(limbLocators))
+    limbJoints.append(util.rigging.createLimbChain(limbLocators, limbName))
 
     util.select.modifyButtonList(['limbCreateButton'], True)
     util.select.modifyButtonList(['limbControlsButton'], True)
