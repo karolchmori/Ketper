@@ -138,12 +138,12 @@ def page(mainWidth, mainHeight):
     return child #important to return all information
 
 
-def modifySizeShapes(multiplier):
+def modifySizeShapes(factor):
     selectedObjects = mc.ls(selection=True)
 
     if selectedObjects:
         for obj in selectedObjects:
-            util.create.changeSizeCurve(obj, multiplier)
+            util.create.changeSizeCurve(obj, factor)
     
     mc.select(cl=True)
 

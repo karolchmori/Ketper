@@ -84,9 +84,9 @@ def page(mainWidth, mainHeight):
     mc.frameLayout(label='Digits', collapsable=False, collapse=False, marginWidth=5, marginHeight=5)
     mc.rowLayout(nc=4)
     mc.text(l='Digits: ')
-    mc.textField('numDigitsTXT', tx='2', w= 40)
+    mc.textField('numDigitsTXT', tx='5', w= 40)
     mc.text(l=' Joints: ')
-    mc.textField('numJointsTXT', tx='3', w= 40)
+    mc.textField('numJointsTXT', tx='4', w= 40)
     mc.setParent('..') # End rowLayout
     mc.rowLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Create curves: ')

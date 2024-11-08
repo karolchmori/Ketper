@@ -42,7 +42,7 @@ def changeSizeCurve(obj, multiplier):
         pivot_point = [coord / numCvs for coord in pivot_point]
 
         # Scale the CVs relative to their center pivot point
-        mc.scale(multiplier, multiplier, multiplier, cvs, relative=True, pivot=pivot_point)
+        mc.scale(multiplier, multiplier, multiplier, cvs, relative=False, pivot=pivot_point)
 
 
 
