@@ -117,6 +117,34 @@ def combineObjects():
 
     return holder
 
+#REPLACE
+'''def replaceCurves(curves):
+    firstCRV = None
+    for i in range(1,len(curves)):
+        crvShape = mc.listRelatives(curves[i], shapes = True)
+        mc.parent(crvShape,curves[0],s=True,r=True)
+        if i == 1:
+            firstCRV = crvShape[0]
+        
+        mc.delete(curves[i])
+    crvMainShape = mc.listRelatives(curves[0], shapes = True)[0]
+    mc.delete(crvMainShape)
+    #print(firstCRV)
+    mc.rename(firstCRV, crvMainShape)'''
+
+def replaceCurve(oldCurve, newCurve):
+    firstCRV = None
+    crvShape = mc.listRelatives(newCurve, shapes = True)
+    mc.parent(crvShape,oldCurve,s=True,r=True)
+    firstCRV = crvShape[0]
+    mc.delete(newCurve)
+        
+    crvMainShape = mc.listRelatives(oldCurve, shapes = True)[0]
+    mc.delete(crvMainShape)
+    #print(firstCRV)
+    mc.rename(firstCRV, crvMainShape)
+        
+#replaceCurve(['connect_CTL','curve1'])
 
 def changeColorShape(slider):
     color = mc.colorIndexSliderGrp(slider, q=True, value=True)
