@@ -151,7 +151,7 @@ def createDigitsConnection(digitsLocator, digitsJoints, mainParentCTL):
     mc.select(cl=True)
 
     #main controller
-    mainController = util.rigging.createCTLJointList([connectionJoint],'GRP;ANIM;OFFSET')
+    mainController = util.rigging.createCTLJointList([connectionJoint],'GRP;ANIM;OFFSET')[0]
 
 
     print(digitsJoints)
