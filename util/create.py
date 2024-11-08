@@ -18,7 +18,7 @@ def createGroupStructure(text, mainName, firstParent):
         mc.group(em=True, name= mainName+'_'+item, parent=lastName)
         lastName = mainName+'_'+item
 
-    return lastName    
+    return lastName
 
 def createTextCurves(text):
     textObject = mc.textCurves(f = 'Arial', t = text)

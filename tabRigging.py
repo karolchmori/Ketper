@@ -79,20 +79,20 @@ def page(mainWidth, mainHeight):
     mc.setParent('..') # End rowLayout
     mc.rowLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Create curves: ')
-    mc.button('limbCurveButton', l='GO', c=lambda _: createStructureDigits())
+    mc.button('digitsCurveButton', l='GO', c=lambda _: createStructureDigits())
     mc.setParent('..') # End rowLayout
 
     mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Create Joints: ')
-    mc.button('digitCreateButton', l='GO', c=lambda _: createDigitsJoints(digitsStructures))
+    mc.button('digitsCreateButton', l='GO', c=lambda _: createDigitsJoints(digitsStructures), en=False)
     mc.setParent('..') # End rowColumnLayout
 
     mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Connect: ')
-    mc.button( l='GO', c=lambda _:createDigitsConnection(digitsLocator, digitsJoints, mainParentCTL))
+    mc.button('digitsConnectButton', l='GO', c=lambda _:createDigitsConnection(digitsLocator, digitsJoints, mainParentCTL), en=False)
     mc.setParent('..') # End rowColumnLayout
     
-    mc.button('digitsResetButton', l='Restart', c=lambda _: restartDigitsChain())
+    mc.button('digitsResetButton', l='Restart', c=lambda _: restartDigitsChain(), en=False)
     mc.setParent('..') # End frameLayout
 
 
@@ -110,7 +110,8 @@ def createStructureDigits():
     for i in range(digits):
         digitsStructures.append(util.rigging.createCurveDigits(f'digit{i+1}_CRV', numJoints))
 
-
+    util.select.modifyButtonList(['digitsCreateButton','digitsResetButton'], True)
+    util.select.modifyButtonList(['digitsCurveButton'], False)
     util.select.setfocusMaya()
 
 
@@ -136,6 +137,9 @@ def createDigitsJoints(digitsStructures):
     
     digitsLocator = mc.spaceLocator(n='connect_LOC')[0]
     util.rigging.addInternalName(digitsLocator, digitsLocator)
+
+    util.select.modifyButtonList(['digitsConnectButton'], True)
+    util.select.modifyButtonList(['digitsCreateButton'], False)
 
     util.select.setfocusMaya()
 
@@ -166,6 +170,7 @@ def createDigitsConnection(digitsLocator, digitsJoints, mainParentCTL):
 
     mc.parentConstraint(mainController, connectionJoint,  mo=True, w=1)
     mc.select(cl=True)
+    util.select.modifyButtonList(['digitsConnectButton'], False)
     util.select.setfocusMaya()
 
 
@@ -182,6 +187,8 @@ def restartDigitsChain():
     listControlsDigits = []
     mainParentCTL = []
 
+    util.select.modifyButtonList(['digitsCreateButton','digitsConnectButton','digitsResetButton'], False)
+    util.select.modifyButtonList(['digitsCurveButton'], True)
     util.select.setfocusMaya()
 
 #endregion

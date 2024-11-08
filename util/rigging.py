@@ -146,7 +146,8 @@ def createDigitsChain(obj):
         else:
             mc.aimConstraint(jointChain[i],jointChain[i-1], wut='object', wuo=jointChain[0], aim=(1,0,0), u=(0,0,1))
         mc.delete( f"{jointChain[i-1]}_aimConstraint1")
-    
+
+
     #Freeze transformation in rotation
     mc.select(jointChain)
     mc.makeIdentity(apply=True, rotate=True )
