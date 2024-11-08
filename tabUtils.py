@@ -443,7 +443,10 @@ def applyReplaceAction():
     if selectedObjects:
         if repfromTextValue:
             for item in selectedObjects:
-                newName = util.naming.replaceText(item, repfromTextValue, reptoTextValue)
+                if "|" in item:
+                    oldName = item.split("|")[-1]
+                    
+                newName = util.naming.replaceText(oldName, repfromTextValue, reptoTextValue)
                 mc.rename(item,newName)
         else:
             mc.confirmDialog( title='Error', message='Please insert a value', button=['OK'], defaultButton='OK')
