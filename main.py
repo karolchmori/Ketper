@@ -3,6 +3,7 @@ import sys
 import os
 
 script_dir = "F:\Individual\Programming\Ketper"  # Change this to your script's directory
+#script_dir = "C:\\Users\karol\Documents\GitHub\Ketper"
 if script_dir not in sys.path:
     sys.path.append(script_dir)
 

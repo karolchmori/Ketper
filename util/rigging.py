@@ -108,7 +108,7 @@ def getObjByInternalName(internalName):
 #region Digits Related
 def createCurveDigits(nameCurve, numCvs):
     start_pos=(0, 0, 0)
-    length = 2
+    length = 6
     segmentLength = length / (numCvs - 1)
     cvPositions = [(start_pos[0] + i * segmentLength, start_pos[1] , start_pos[2]) for i in range(numCvs)]
 

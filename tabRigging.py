@@ -8,9 +8,13 @@ limbLocators = []
 limbJoints = []
 limbDict = ['arm','leg']
 
+
 digitsStructures = []
 digitsJoints = []
 digitsLocator = None
+listControlsDigits = []
+mainParentCTL = []
+
 
 
 def page(mainWidth, mainHeight):
@@ -85,7 +89,7 @@ def page(mainWidth, mainHeight):
 
     mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Connect: ')
-    mc.button( l='GO', c=lambda _:createDigitsConnection(digitsLocator, digitsJoints))
+    mc.button( l='GO', c=lambda _:createDigitsConnection(digitsLocator, digitsJoints, mainParentCTL))
     mc.setParent('..') # End rowColumnLayout
     
     mc.button('digitsResetButton', l='Restart', c=lambda _: restartDigitsChain())
@@ -107,31 +111,62 @@ def createStructureDigits():
         digitsStructures.append(util.rigging.createCurveDigits(f'digit{i+1}_CRV', numJoints))
 
 
+    util.select.setfocusMaya()
+
+
 def createDigitsJoints(digitsStructures):
     global digitsJoints
     global digitsLocator
+    global listControlsDigits
+    groupStructure = 'GRP;ANIM;OFFSET'
+
+    global mainParentCTL
+
 
     for i in range(len(digitsStructures)):
         digitsJoints.append(util.rigging.createDigitsChain(digitsStructures[i]))
+        listControlsDigits.append(util.rigging.createCTLJointList(digitsJoints[i],groupStructure))
+        mainParentCTL.append(util.naming.modifyName('replace', listControlsDigits[i][0], '_CTL','_GRP'))
 
+    #Parent controllers and joints
+    for i in range(len(digitsJoints)):
+        for j in range(len(digitsJoints[i])):
+            mc.parentConstraint(listControlsDigits[i][j],digitsJoints[i][j],  mo=True, w=1)
+    
+    
     digitsLocator = mc.spaceLocator(n='connect_LOC')[0]
     util.rigging.addInternalName(digitsLocator, digitsLocator)
 
-def createDigitsConnection(digitsLocator, digitsJoints):
+    util.select.setfocusMaya()
+
+def createDigitsConnection(digitsLocator, digitsJoints, mainParentCTL):
 
     locatorPos = util.rigging.getPosition(digitsLocator)
     originalObj = util.rigging.getObjByInternalName(digitsLocator)
 
+    newName = util.naming.modifyName('replace', originalObj, '_LOC','_JNT')
+
     mc.select(cl=True)
-    connectionJoint = mc.joint(p=locatorPos, name = originalObj)
+    connectionJoint = mc.joint(p=locatorPos, name = newName)
     mc.select(cl=True)
+
+    #main controller
+    mainController = util.rigging.createCTLJointList([connectionJoint],'GRP;ANIM;OFFSET')
+
 
     print(digitsJoints)
 
     for i in range(len(digitsJoints)):
         mc.parent(digitsJoints[i][0], connectionJoint)
+        mc.parent(mainParentCTL[i], mainController)
+
+    
 
     mc.delete(digitsLocator)
+
+    mc.parentConstraint(mainController, connectionJoint,  mo=True, w=1)
+    mc.select(cl=True)
+    util.select.setfocusMaya()
 
 
 def restartDigitsChain():
@@ -141,6 +176,8 @@ def restartDigitsChain():
     digitsStructures = []
     digitsJoints = []
     digitsLocator = None
+    listControlsDigits = []
+    mainParentCTL = None
 
     util.select.setfocusMaya()
 
