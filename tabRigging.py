@@ -39,7 +39,16 @@ def page(mainWidth, mainHeight):
     # ----------------------------------------------------------------------
 
     mc.frameLayout(label='Spine', collapsable=True, collapse=False, marginWidth=5, marginHeight=5, w=mainWidth-10)
-
+    '''
+        1. Create two locators, root and end. Goes from bottom to top
+        2. Calculate the distance between two point and input X amounts of joints evenly. 
+        3. Create IK handle between root and end. Number spans 2, deactivate auto parent curve
+        4. Create clusters in each cv of the curve
+        5. Create groups and controllers on each cluster, make the size bigger
+        6. Parent the groups. Check the video because is not ordered by number
+        7. Delete clusters
+        8. MORE
+    '''
 
     mc.setParent('..') # End frameLayout
 
