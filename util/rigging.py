@@ -170,7 +170,7 @@ def createSpineChain(locatorList, totalJoints):
         locatorTemp = mc.spaceLocator()[0]
         mc.matchTransform(locatorTemp, newJoints[i], scl=False, rot=False, pos=True)
         mc.move(0, 0, 5, locatorTemp, relative=True)
-        mc.aimConstraint(newJoints[i+1],newJoints[i], wut='object', wuo=locatorTemp, aim=(1,0,0), u=(0,0,1))
+        mc.aimConstraint(newJoints[i+1],newJoints[i], wut='object', wuo=locatorTemp, aim=(0,1,0), u=(0,0,1))
         mc.delete( f"{newJoints[i]}_aimConstraint1", locatorTemp)
 
     #Freeze transformation in rotation

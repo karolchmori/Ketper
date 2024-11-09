@@ -201,19 +201,21 @@ def createSpineControllers(spineJoints):
         mc.connectAttr(controllersList[i] + '.worldMatrix[0]', node + '.inputMatrix')
         mc.connectAttr(node + '.outputTranslate', spineCRVShape + f'.controlPoints[{i}]')
 
+    #TODO: create a locator with hip end?? 
     ''' ----------------------------------- HIP ----------------------------------- 
         1. Create a controller, position it on the root spine, modify the controller form
         2. Modify the first DecomposeMatrix, it won't be connected to spine_01 anymore, but to the controller of the HIP
         3. Create two joints, one with the same position to the spine root, and the other one below (from top to bottom)
         4. Parent the controller to the hip joint root
-        5. 
     '''
+    rootPos = util.rigging.getPosition(spineJoints[0][0])
+
+
     hipCTL = util.create.createShape('cube')
     hipCTL = mc.rename(hipCTL, 'spineHip_CTL')
 
     lastGroup = util.create.createGroupStructure(groupStructure,'spineHip_Controls', None)
     mc.parent(hipCTL, lastGroup)
-    rootPos = util.rigging.getPosition(spineJoints[0][0])
     mc.xform('spineHip_Controls_' + firstGroup, translation=rootPos)
 
     mc.disconnectAttr(controllersList[0] + '.worldMatrix[0]', firstDCMNode + '.inputMatrix')
@@ -239,8 +241,34 @@ def createSpineControllers(spineJoints):
     util.rigging.nullJointOrients(spineJoints[1][len(spineJoints[1])-1])
 
     mc.move(0, -5, 0, hipEndJNT, relative=True)
-    
+
     mc.parentConstraint(hipCTL, hipRootJNT)
+
+    ''' ----------------------------------- BODY MAIN ----------------------------------- 
+        1. Create a controller positioned on the root joint (controller + group)
+        2. body_CTL parentConstraint spine_Hip_Controls_GRP only rotate (if I move it doesn't affect, but when I rotate everything rotates)
+        3. spine01Controls_GRP parent normal on body_CTL 
+    '''
+
+    bodyCTL = util.create.createShape('cube')
+    bodyCTL = mc.rename(bodyCTL, 'body_CTL')
+
+    lastGroup = util.create.createGroupStructure(groupStructure,'body_Controls', None)
+    mc.parent(bodyCTL, lastGroup)
+    mc.xform('body_Controls_' + firstGroup, translation=rootPos)
+
+    mc.parentConstraint(bodyCTL, 'spineHip_Controls_' + firstGroup, st=["x","z","y"], mo=True)
+    mc.parent('spine_01_Controls_GRP', bodyCTL)
+
+    '''
+        1. Activate Advanced Twist Controls on IKHandle (check)
+        2. World Up type = Object Rotation Up (Start/End)
+        3. Forward Axis = Positive Y
+        4. Up Axis = Positive X
+        5. Up vector (1,0,0) ---- Up Vector 2 (1,0,0)
+        6. World Up Object = spineHip_CTL
+        7. World Up Object = spine_05_CTL
+    '''
 
 #endRegion
 
