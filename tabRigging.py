@@ -166,12 +166,10 @@ def createSpineControllers(spineJoints):
         5. Create groups and controllers on each cluster, make the size bigger
         6. Parent the groups. Check the video because is not ordered by number
         7. DONT DO ----- Delete clusters
-        8. Select the curve shape
-        9. DecomposeMatrix --> InputMatrix   (C_spine01_CTL)  DecomposeMatrix.OutputTranslate to shape.ControlPoints[0]  
-        10. Do the same for all the joints
     '''
     groupStructure = 'GRP;ANIM;OFFSET'
     firstGroup = groupStructure.split(';')[0]
+    controllersList = []
 
     ikHandle = mc.ikHandle(n='spine_HDL', sj=spineJoints[0][0], ee=spineJoints[0][len(spineJoints[0])-1], sol='ikSplineSolver', ns=2, pcv=False, ccv=True)[0] 
     spineCRV = mc.listConnections(ikHandle + ".inCurve", type="nurbsCurve")[0]
@@ -186,12 +184,27 @@ def createSpineControllers(spineJoints):
         lastGroup = util.create.createGroupStructure(groupStructure,f'spine_0{i+1}_Controls', None)
         mc.parent(controller, lastGroup)
         mc.xform(f'spine_0{i+1}_Controls_' + firstGroup, translation=cvPos)
+        controllersList.append(controller)
 
     #Parent like video
     mc.parent('spine_02_Controls_' + firstGroup, 'spine_01_CTL')
     mc.parent('spine_03_Controls_' + firstGroup, 'spine_01_CTL')
     mc.parent('spine_04_Controls_' + firstGroup, 'spine_05_CTL')
     mc.parent('spine_05_Controls_' + firstGroup, 'spine_03_CTL')
+    
+    '''
+        8. Select the curve shape
+        9. DecomposeMatrix --> InputMatrix   (C_spine01_CTL)  DecomposeMatrix.OutputTranslate to shape.ControlPoints[0]  
+        10. Do the same for all the controllers
+    '''
+
+    spineCRVShape = mc.listRelatives(spineCRV, shapes=True)[0]
+
+    for i in range(len(controllersList)):
+        node = mc.createNode('decomposeMatrix', name= f'spine_0{i+1}_CVDCM')
+        mc.connectAttr(controllersList[i] + '.worldMatrix[0]', node + '.inputMatrix')
+        mc.connectAttr(node + '.outputTranslate', spineCRVShape + f'.controlPoints[{i}]')
+
 
 #endRegion
 
