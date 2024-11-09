@@ -140,12 +140,22 @@ def createDigitsChain(obj):
     mc.delete(originalObj)
     
     #Orientation
-    for i in range(1, len(jointChain)):
+    '''for i in range(1, len(jointChain)):
         if i != len(jointChain) and (i+1) <= (len(jointChain))-1:
             mc.aimConstraint(jointChain[i],jointChain[i-1], wut='object', wuo=jointChain[i+1], aim=(1,0,0), u=(0,0,1))
         else:
             mc.aimConstraint(jointChain[i],jointChain[i-1], wut='object', wuo=jointChain[0], aim=(1,0,0), u=(0,0,1))
-        mc.delete( f"{jointChain[i-1]}_aimConstraint1")
+        mc.delete( f"{jointChain[i-1]}_aimConstraint1")'''
+
+
+    for i in range(len(jointChain)-1):
+        locatorTemp = mc.spaceLocator()[0]
+        mc.matchTransform(locatorTemp, jointChain[i], scl=False, rot=False, pos=True)
+
+        mc.move(0, 5, 0, locatorTemp, relative=True)
+        mc.aimConstraint(jointChain[i+1],jointChain[i], wut='object', wuo=locatorTemp, aim=(1,0,0), u=(0,1,0))
+        
+        mc.delete( f"{jointChain[i]}_aimConstraint1", locatorTemp)
 
 
     #Freeze transformation in rotation
