@@ -485,7 +485,7 @@ def generateIKSoftNodes(listJoints, listControls, ikHandle, tempConstraint, IKSt
     mc.connectAttr(listControls[0] + '.worldMatrix[0]', IKlimbDisToCTLDBT + '.inMatrix2')
 
     IKlimbDisToCTLNormalFML = floatMConnect(f'IK_{limbName}DisToCTLNormalFML', 3, IKlimbDisToCTLDBT + '.distance', None)
-    mc.setAttr(IKlimbDisToCTLNormalFML + '.floatB', 1) #materwalk_CTL.globalscale
+    mc.setAttr(IKlimbDisToCTLNormalFML + '.floatB', 1) # TODO C_masterWalk_CTL.globalscale
     
     #Getting the value for limbSotfValueRMV.maxOutput
     valueA = mc.getAttr(IKlimbFullLenFLM + '.outFloat')

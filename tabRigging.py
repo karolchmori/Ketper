@@ -164,6 +164,7 @@ def createSpineControllers(spineJoints):
     groupStructure = 'GRP;ANIM;OFFSET'
     firstGroup = groupStructure.split(';')[0]
     controllersList = []
+    stretch = True
 
     ikHandle = mc.ikHandle(n='spine_HDL', sj=spineJoints[0][0], ee=spineJoints[0][len(spineJoints[0])-1], sol='ikSplineSolver', ns=2, pcv=False, ccv=True)[0] 
     spineCRV = mc.listConnections(ikHandle + ".inCurve", type="nurbsCurve")[0]
@@ -243,6 +244,7 @@ def createSpineControllers(spineJoints):
     mc.move(0, -5, 0, hipEndJNT, relative=True)
 
     mc.parentConstraint(hipCTL, hipRootJNT)
+    controllersList.append(hipCTL)
 
     ''' ----------------------------------- BODY MAIN ----------------------------------- 
         1. Create a controller positioned on the root joint (controller + group)
@@ -259,6 +261,7 @@ def createSpineControllers(spineJoints):
 
     mc.parentConstraint(bodyCTL, 'spineHip_Controls_' + firstGroup, st=["x","z","y"], mo=True)
     mc.parent('spine_01_Controls_GRP', bodyCTL)
+    controllersList.append(bodyCTL)
 
     '''
         ----------------------------------- IK HANDLE TWIST ----------------------------------- 
@@ -310,9 +313,52 @@ def createSpineControllers(spineJoints):
     tempGroup = 'spine_Preferences_Controls_' + firstGroup
     mc.matchTransform(tempGroup, spineJoints[0][0], pos=True)
     mc.move(0, 0, -20, tempGroup, relative=True)
-    
-    spineJoints.append([controlName])
 
+    controllersList.append(controlName)
+    #print(controllersList)
+
+    # ----------------------------------------------------------------------
+    # ------------------------------ STRETCH -------------------------------
+    # ----------------------------------------------------------------------
+    if stretch:
+        mc.select(controllersList[-1])
+        mc.addAttr(longName='stretch', niceName= 'Stretch', attributeType="float", dv=0, min=0, max=1, h=False, k=True)
+        mc.addAttr(longName='stretchMin', niceName= 'Stretch Min', attributeType="float", dv=0.8, min=0.001, max=1, h=False, k=True)
+        mc.addAttr(longName='stretchMax', niceName= 'Stretch Max', attributeType="float", dv=1.2, min=1, h=False, k=True)
+        mc.addAttr(longName='offset', niceName= 'Offset', attributeType="float", dv=0, min=0, max=1, h=False, k=True)
+
+        # Create a curveInfo node
+        spineCRVInfo = mc.createNode('curveInfo', name=f"{spineCRVShape}_curveInfo")
+        # Connect the curve's worldSpace attribute to the curveInfo node's inputCurve attribute
+        mc.connectAttr(f"{spineCRVShape}.worldSpace[0]", f"{spineCRVInfo}.inputCurve")
+
+        spineInitialLenFLM = util.rigging.floatMConnect('spineScaleFLM',2, None, None)
+        mc.setAttr(spineInitialLenFLM + '.floatA', mc.getAttr(f"{spineCRVInfo}.arcLength"))
+        mc.setAttr(spineInitialLenFLM + '.floatB', 1) #TODO C_masterWalk_CTL.globalscale
+        
+        spineStretchFactorFLM = util.rigging.floatMConnect('spineCRVFLM',3,f"{spineCRVInfo}.arcLength", spineInitialLenFLM + '.outFloat')
+        
+        # Create the clamp node
+        spineStretchFactorCLM = mc.createNode('clamp', name='spineStretchFactorCLM')
+        mc.connectAttr( f'{spineStretchFactorFLM}.outFloat', f"{spineStretchFactorCLM}.inputR", force=True)
+        mc.connectAttr(controllersList[-1] + '.stretchMin', f"{spineStretchFactorCLM}.minR") # Minimum clamp value
+        mc.connectAttr(controllersList[-1] + '.stretchMax', f"{spineStretchFactorCLM}.maxR")  # Maximum clamp value
+
+        # 1. Create a floatConstant node
+        spineBaseStretchFLC = mc.createNode('floatConstant', name='spineBaseStretchFLC')
+
+        # 2. Create a blendTwoAttr node
+        spineStretchBTA = mc.createNode('blendTwoAttr', name='spineStretchBTA')
+        # Connect input1 and input2 to blendTwoAttr
+        mc.connectAttr(f"{spineBaseStretchFLC}.outFloat" , f"{spineStretchBTA}.input[0]")
+        mc.connectAttr(f"{spineStretchFactorCLM}.outputR" , f"{spineStretchBTA}.input[1]")
+        mc.connectAttr(controllersList[-1] + '.stretch', f"{spineStretchBTA}.attributesBlender")
+
+        spineStretchValueFLM = util.rigging.floatMConnect('spineStretchValueFLM', 2, f"{spineStretchBTA}.output", None)
+        mc.setAttr(spineStretchValueFLM + '.floatB', mc.getAttr(spineJoints[0][3] + ".translateY"))
+
+        for i in range(1, len(spineJoints[0])):
+            mc.connectAttr(f"{spineStretchValueFLM}.outFloat" , f"{spineJoints[0][i]}.translateY")
 
 
 #endRegion
