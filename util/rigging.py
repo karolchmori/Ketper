@@ -186,6 +186,9 @@ def createSpineChain(locatorList, totalJoints):
 
     return newJoints
 
+
+
+
 #endRegion
 
 #region Digits Related

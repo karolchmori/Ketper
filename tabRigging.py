@@ -43,18 +43,7 @@ def page(mainWidth, mainHeight):
     # ----------------------------------------------------------------------
 
     mc.frameLayout(label='Spine', collapsable=True, collapse=False, marginWidth=5, marginHeight=5, w=mainWidth-10)
-    ''' ----------------------------------- SPINE ----------------------------------- 
-        1. Create two locators, root and end. Goes from bottom to top
-        2. Calculate the distance between two point and input X amounts of joints evenly. 
-        3. Create IK handle between root and end. Number spans 2, deactivate auto parent curve
-        4. Create clusters in each cv of the curve
-        5. Create groups and controllers on each cluster, make the size bigger
-        6. Parent the groups. Check the video because is not ordered by number
-        7. Delete clusters
-        8. Select the curve shape
-        9. DecomposeMatrix --> InputMatrix   (C_spine01_CTL)  DecomposeMatrix.OutputTranslate to shape.ControlPoints[0]  
-        10. Do the same for all the joints
-    '''
+
     mc.rowLayout(nc=2)
     mc.text(l='Create Locators: ')
     mc.button('spineLocButton', l='GO', c=lambda _: createStructureSpine())
@@ -62,6 +51,8 @@ def page(mainWidth, mainHeight):
     mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Create Joints: ')
     mc.button('spineCreateButton', l='GO', c=lambda _: createSpineJoints(), en=False)
+    mc.text(l='Create Controllers: ')
+    mc.button('spineControlsButton', l='GO', c=lambda _: createSpineControllers(spineJoints))
     mc.setParent('..') # End rowColumnLayout
 
     ''' ----------------------------------- HIP ----------------------------------- 
@@ -163,9 +154,28 @@ def createStructureSpine():
 def createSpineJoints():
     global spineJoints
 
-    limbJoints.append(util.rigging.createSpineChain(spineLocators, 5))
+    spineJoints.append(util.rigging.createSpineChain(spineLocators, 5))
     util.select.setfocusMaya()
 
+def createSpineControllers(spineJoints):
+    ''' ----------------------------------- SPINE ----------------------------------- 
+        1. Create two locators, root and end. Goes from bottom to top
+        2. Calculate the distance between two point and input X amounts of joints evenly. 
+        3. Create IK handle between root and end. Number spans 2, deactivate auto parent curve
+        4. Create clusters in each cv of the curve
+        5. Create groups and controllers on each cluster, make the size bigger
+        6. Parent the groups. Check the video because is not ordered by number
+        7. Delete clusters
+        8. Select the curve shape
+        9. DecomposeMatrix --> InputMatrix   (C_spine01_CTL)  DecomposeMatrix.OutputTranslate to shape.ControlPoints[0]  
+        10. Do the same for all the joints
+    '''
+    
+    print("ALL JOINTS:", spineJoints)
+    print("END JOINT: ", spineJoints[0][len(spineJoints[0])-1])
+    ikHandle = mc.ikHandle(n='spine_HDL', sj=spineJoints[0][0], ee=spineJoints[0][len(spineJoints[0])-1], sol='ikSplineSolver', ns=2, pcv=False, ccv=True)[0] 
+    spineCRV = mc.listConnections(ikHandle + ".inCurve", type="nurbsCurve")[0]
+    print(f"Curve: {spineCRV}")
 
 #endRegion
 
