@@ -296,7 +296,22 @@ def createSpineControllers(spineJoints):
     mc.disconnectAttr(hipCTL + '.worldMatrix[0]', firstDCMNode + '.inputMatrix')
     mc.connectAttr(controllersList[0] + '.worldMatrix[0]', firstDCMNode + '.inputMatrix')
     mc.pointConstraint(controllersList[0], 'spineHip_Controls_' + firstGroup)
+
+    # ----------------------------------------------------------------------
+    # --------------------------- PREFERENCES ------------------------------
+    # ----------------------------------------------------------------------
+    controlName = 'spine_Preferences_CTL'
+    lastGroup = util.create.createGroupStructure(groupStructure,'spine_Preferences_Controls',None)
+    controller = util.create.createTextCurves('S')
+    controller = mc.rename(controller, controlName)
+
+    mc.parent(controller, lastGroup)
     
+    tempGroup = 'spine_Preferences_Controls_' + firstGroup
+    mc.matchTransform(tempGroup, spineJoints[0][0], pos=True)
+    mc.move(0, 0, -20, tempGroup, relative=True)
+    
+    spineJoints.append([controlName])
 
 
 

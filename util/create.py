@@ -68,11 +68,14 @@ def createTextCurves(text):
     pivot = mc.xform(result, q=True, ws=True, rp=True)
     
     mc.move(-pivot[0], -pivot[1], -pivot[2], result, r=True)
-    mc.FreezeTransformations()
+    mc.makeIdentity(result, apply=True, translate=True, rotate=True, scale=True, normal=False)
+    #mc.FreezeTransformations()
     mc.delete(ch=1)
     
     mainParent = mc.listRelatives(parent[0], parent=True)
     mc.delete(mainParent)
+
+    return result
 
 #createTextCurves('TEST')
 
