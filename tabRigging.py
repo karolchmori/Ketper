@@ -178,18 +178,20 @@ def createSpineControllers(spineJoints):
     spineCRV = mc.rename(spineCRV, 'spine_CRV')
 
     numCvs = mc.getAttr(f"{spineCRV}.degree") + mc.getAttr(f"{spineCRV}.spans")
-    newParent = None
     for i in range(numCvs):
         # Get the position of each CV
         cvPos = mc.pointPosition(f"{spineCRV}.cv[{i}]", world=True)
         controller = util.create.createShape('circle')[0]
         controller = mc.rename(controller, f'spine_0{i+1}_CTL')
-        lastGroup = util.create.createGroupStructure(groupStructure,f'spine_0{i+1}_Controls', newParent)
+        lastGroup = util.create.createGroupStructure(groupStructure,f'spine_0{i+1}_Controls', None)
         mc.parent(controller, lastGroup)
-        
         mc.xform(f'spine_0{i+1}_Controls_' + firstGroup, translation=cvPos)
-        newParent = controller
 
+    #Parent like video
+    mc.parent('spine_02_Controls_' + firstGroup, 'spine_01_CTL')
+    mc.parent('spine_03_Controls_' + firstGroup, 'spine_01_CTL')
+    mc.parent('spine_04_Controls_' + firstGroup, 'spine_05_CTL')
+    mc.parent('spine_05_Controls_' + firstGroup, 'spine_03_CTL')
 
 #endRegion
 
