@@ -226,15 +226,21 @@ def createSpineControllers(spineJoints):
     hipEndJNT = mc.duplicate(hipRootJNT, rr=True)
     hipEndJNT = mc.rename(hipEndJNT, "localHipEnd_JNT")
     mc.parent(hipEndJNT,hipRootJNT)
+
+    spineJoints.append([hipRootJNT,hipEndJNT])
     
+    for i in range(len(spineJoints[1])-1):
+        locatorTemp = mc.spaceLocator()[0]
+        mc.matchTransform(locatorTemp, spineJoints[1][i], scl=False, rot=False, pos=True)
+        mc.move(0, 0, 5, locatorTemp, relative=True)
+        mc.aimConstraint(spineJoints[1][i+1],spineJoints[1][i], wut='object', wuo=locatorTemp, aim=(1,0,0), u=(0,0,1))
+        mc.delete( f"{spineJoints[1][i]}_aimConstraint1", locatorTemp)
+
+    util.rigging.nullJointOrients(spineJoints[1][len(spineJoints[1])-1])
+
     mc.move(0, -5, 0, hipEndJNT, relative=True)
     
-
     mc.parentConstraint(hipCTL, hipRootJNT)
-    
-
-
-
 
 #endRegion
 
