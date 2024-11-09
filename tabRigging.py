@@ -287,6 +287,18 @@ def createSpineControllers(spineJoints):
     mc.connectAttr('spine_05_CTL' + '.worldMatrix[0]', ikHandle + ".dWorldUpMatrixEnd")
 
 
+    '''
+        0. Disconnect current 01 CDM and connect like the first time
+        1. spine_01_CTL point constraint on spineHip_CTL
+    
+    '''
+    
+    mc.disconnectAttr(hipCTL + '.worldMatrix[0]', firstDCMNode + '.inputMatrix')
+    mc.connectAttr(controllersList[0] + '.worldMatrix[0]', firstDCMNode + '.inputMatrix')
+    mc.pointConstraint(controllersList[0], 'spineHip_Controls_' + firstGroup)
+    
+
+
 
 #endRegion
 
