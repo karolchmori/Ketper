@@ -162,20 +162,34 @@ def createSpineControllers(spineJoints):
         1. Create two locators, root and end. Goes from bottom to top
         2. Calculate the distance between two point and input X amounts of joints evenly. 
         3. Create IK handle between root and end. Number spans 2, deactivate auto parent curve
-        4. Create clusters in each cv of the curve
+        4. DONT DO ----- Create clusters in each cv of the curve , create it on each cv
         5. Create groups and controllers on each cluster, make the size bigger
         6. Parent the groups. Check the video because is not ordered by number
-        7. Delete clusters
+        7. DONT DO ----- Delete clusters
         8. Select the curve shape
         9. DecomposeMatrix --> InputMatrix   (C_spine01_CTL)  DecomposeMatrix.OutputTranslate to shape.ControlPoints[0]  
         10. Do the same for all the joints
     '''
-    
-    print("ALL JOINTS:", spineJoints)
-    print("END JOINT: ", spineJoints[0][len(spineJoints[0])-1])
+    groupStructure = 'GRP;ANIM;OFFSET'
+    firstGroup = groupStructure.split(';')[0]
+
     ikHandle = mc.ikHandle(n='spine_HDL', sj=spineJoints[0][0], ee=spineJoints[0][len(spineJoints[0])-1], sol='ikSplineSolver', ns=2, pcv=False, ccv=True)[0] 
     spineCRV = mc.listConnections(ikHandle + ".inCurve", type="nurbsCurve")[0]
-    print(f"Curve: {spineCRV}")
+    spineCRV = mc.rename(spineCRV, 'spine_CRV')
+
+    numCvs = mc.getAttr(f"{spineCRV}.degree") + mc.getAttr(f"{spineCRV}.spans")
+    newParent = None
+    for i in range(numCvs):
+        # Get the position of each CV
+        cvPos = mc.pointPosition(f"{spineCRV}.cv[{i}]", world=True)
+        controller = util.create.createShape('circle')[0]
+        controller = mc.rename(controller, f'spine_0{i+1}_CTL')
+        lastGroup = util.create.createGroupStructure(groupStructure,f'spine_0{i+1}_Controls', newParent)
+        mc.parent(controller, lastGroup)
+        
+        mc.xform(f'spine_0{i+1}_Controls_' + firstGroup, translation=cvPos)
+        newParent = controller
+
 
 #endRegion
 
