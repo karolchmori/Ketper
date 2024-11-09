@@ -55,13 +55,7 @@ def page(mainWidth, mainHeight):
     mc.button('spineControlsButton', l='GO', c=lambda _: createSpineControllers(spineJoints))
     mc.setParent('..') # End rowColumnLayout
 
-    ''' ----------------------------------- HIP ----------------------------------- 
-        1. Create a controller, position it on the root spine, modify the controller
-        2. Modify the first DecomposeMatrix, it won't be connected to spine_01 anymore, but to the controller of the HIP
-        3. Create two joints, one with the same position to the spine root, and the other one below (from top to bottom)
-        4. Parent the controller to the hip joint root
-        5. 
-    '''
+
 
     mc.setParent('..') # End frameLayout
 
@@ -191,7 +185,7 @@ def createSpineControllers(spineJoints):
     mc.parent('spine_03_Controls_' + firstGroup, 'spine_01_CTL')
     mc.parent('spine_04_Controls_' + firstGroup, 'spine_05_CTL')
     mc.parent('spine_05_Controls_' + firstGroup, 'spine_03_CTL')
-    
+
     '''
         8. Select the curve shape
         9. DecomposeMatrix --> InputMatrix   (C_spine01_CTL)  DecomposeMatrix.OutputTranslate to shape.ControlPoints[0]  
@@ -199,11 +193,47 @@ def createSpineControllers(spineJoints):
     '''
 
     spineCRVShape = mc.listRelatives(spineCRV, shapes=True)[0]
-
+    firstDCMNode = None
     for i in range(len(controllersList)):
         node = mc.createNode('decomposeMatrix', name= f'spine_0{i+1}_CVDCM')
+        if i == 0:
+            firstDCMNode = node
         mc.connectAttr(controllersList[i] + '.worldMatrix[0]', node + '.inputMatrix')
         mc.connectAttr(node + '.outputTranslate', spineCRVShape + f'.controlPoints[{i}]')
+
+    ''' ----------------------------------- HIP ----------------------------------- 
+        1. Create a controller, position it on the root spine, modify the controller form
+        2. Modify the first DecomposeMatrix, it won't be connected to spine_01 anymore, but to the controller of the HIP
+        3. Create two joints, one with the same position to the spine root, and the other one below (from top to bottom)
+        4. Parent the controller to the hip joint root
+        5. 
+    '''
+    hipCTL = util.create.createShape('cube')
+    hipCTL = mc.rename(hipCTL, 'spineHip_CTL')
+
+    lastGroup = util.create.createGroupStructure(groupStructure,'spineHip_Controls', None)
+    mc.parent(hipCTL, lastGroup)
+    rootPos = util.rigging.getPosition(spineJoints[0][0])
+    mc.xform('spineHip_Controls_' + firstGroup, translation=rootPos)
+
+    mc.disconnectAttr(controllersList[0] + '.worldMatrix[0]', firstDCMNode + '.inputMatrix')
+    mc.connectAttr(hipCTL + '.worldMatrix[0]', firstDCMNode + '.inputMatrix')
+
+    hipRootJNT = mc.duplicate(spineJoints[0][0], rr=True, po=True)
+    hipRootJNT = mc.rename(hipRootJNT, "localHipRoot_JNT")
+    mc.select(hipRootJNT)
+
+    hipEndJNT = mc.duplicate(hipRootJNT, rr=True)
+    hipEndJNT = mc.rename(hipEndJNT, "localHipEnd_JNT")
+    mc.parent(hipEndJNT,hipRootJNT)
+    
+    mc.move(0, -5, 0, hipEndJNT, relative=True)
+    
+
+    mc.parentConstraint(hipCTL, hipRootJNT)
+    
+
+
 
 
 #endRegion

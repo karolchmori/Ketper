@@ -101,7 +101,8 @@ def createShape(shape):
         mc.CenterPivot()
         mc.xform(myCube,t=(-.5,-.5,-.5))
         mc.select(myCube)
-        mc.FreezeTransformations()
+        mc.makeIdentity(myCube, apply=True, translate=True, rotate=True, scale=True, normal=False)
+        #mc.FreezeTransformations()
         myCube = mc.rename("curve")
         mc.delete(ch=1)
         result = myCube
