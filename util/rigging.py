@@ -102,8 +102,91 @@ def getObjByInternalName(internalName):
         if originalName and originalName == internalName:
             newObject = obj
             return newObject
-        
 
+#region Spine Related
+
+def createLocStructure(num):
+
+    if num == 2:
+        locatorNames = ['root_LOC','end_LOC']
+    elif num == 3:
+        locatorNames = ['root_LOC','mid_LOC','end_LOC']
+
+    for loc in locatorNames:
+        mc.spaceLocator(n=loc)
+        addInternalName(loc, loc)
+
+    return locatorNames
+
+def createSpineChain(locatorList, totalJoints):
+    
+    #We get original internal names ex houlder_LOC and we need to look for the new names ex joint_01_JNT
+    newLocatorList = [] #Equals to joint_01_JNT ------- NEW NAME
+    mainName = [] #Equals to joint_01 ------- NEW NAME
+
+    # Select only locators with OLD NAMES but saving in the same order with NEW NAME
+    for loc in locatorList:
+        newLoc = getObjByInternalName(loc)
+        if newLoc: 
+            newLocatorList.append(newLoc)
+ 
+    # Get position using NEW NAMES
+    positionList = getPositionList(newLocatorList)
+
+    # Create NEW NAMES
+    mainName = naming.modifyNameList('replace',newLocatorList,'_LOC', '')
+    jointNames = naming.modifyNameList('suffix',mainName,'_JNT', '')
+
+    #Delete Limb locators
+    mc.delete(newLocatorList)
+    
+    # When creating a joint without parenting we are also saving the OLD NAME in an attribute
+    mc.select(cl=True)
+
+    #Create joints
+    for i in range(len(jointNames)):
+        mc.joint(p=positionList[i], name = jointNames[i])
+
+    newJoints = []
+    newJoints.append(jointNames[0])
+
+    #Add left joints (totalJoints - Localist amount)
+    for i in range(1, totalJoints - len(jointNames)+1):
+        jntTemp = mc.duplicate(jointNames[1], rr=True)
+        jntTemp = mc.rename(jntTemp, f"joint_0{i}_JNT")
+
+        currentPosition = mc.xform(jntTemp, query=True, translation=True)
+        newPosition = [coord * (i / (totalJoints-1)) for coord in currentPosition]
+        mc.xform(jntTemp, translation=newPosition)
+
+        newJoints.append(jntTemp)
+        mc.select(cl=True)
+
+    newJoints.append(jointNames[len(jointNames)-1])
+    mc.parent(newJoints[1:], world=True)
+    
+    #Modify Orientation
+    for i in range(len(newJoints)-1):
+        locatorTemp = mc.spaceLocator()[0]
+        mc.matchTransform(locatorTemp, newJoints[i], scl=False, rot=False, pos=True)
+        mc.move(0, 0, 5, locatorTemp, relative=True)
+        mc.aimConstraint(newJoints[i+1],newJoints[i], wut='object', wuo=locatorTemp, aim=(1,0,0), u=(0,0,1))
+        mc.delete( f"{newJoints[i]}_aimConstraint1", locatorTemp)
+
+    #Freeze transformation in rotation
+    mc.select(newJoints)
+    mc.makeIdentity(apply=True, rotate=True )
+    mc.select(cl=True)
+    
+    for i in reversed(range(1,len(newJoints))):
+        mc.parent(newJoints[i],newJoints[i-1])
+    
+    #Clear JointOrients of last joint (Important to do it at the end)
+    nullJointOrients(newJoints[len(newJoints)-1])
+
+    return newJoints
+
+#endRegion
 
 #region Digits Related
 def createCurveDigits(nameCurve, numCvs):
@@ -140,21 +223,13 @@ def createDigitsChain(obj):
     mc.delete(originalObj)
     
     #Orientation
-    '''for i in range(1, len(jointChain)):
-        if i != len(jointChain) and (i+1) <= (len(jointChain))-1:
-            mc.aimConstraint(jointChain[i],jointChain[i-1], wut='object', wuo=jointChain[i+1], aim=(1,0,0), u=(0,0,1))
-        else:
-            mc.aimConstraint(jointChain[i],jointChain[i-1], wut='object', wuo=jointChain[0], aim=(1,0,0), u=(0,0,1))
-        mc.delete( f"{jointChain[i-1]}_aimConstraint1")'''
-
-
     for i in range(len(jointChain)-1):
         locatorTemp = mc.spaceLocator()[0]
         mc.matchTransform(locatorTemp, jointChain[i], scl=False, rot=False, pos=True)
 
         mc.move(0, 5, 0, locatorTemp, relative=True)
         mc.aimConstraint(jointChain[i+1],jointChain[i], wut='object', wuo=locatorTemp, aim=(1,0,0), u=(0,1,0))
-        
+
         mc.delete( f"{jointChain[i]}_aimConstraint1", locatorTemp)
 
 
@@ -180,8 +255,6 @@ def createDigitsChain(obj):
 #endregion
 
 #region Limb Related
-
-
 
 def createLocatorLimb():
     locatorNames = ['root_LOC','mid_LOC', 'end_LOC']

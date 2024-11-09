@@ -16,6 +16,10 @@ listControlsDigits = []
 mainParentCTL = []
 
 
+spineLocators = []
+spineJoints = []
+
+
 
 def page(mainWidth, mainHeight):
 
@@ -51,8 +55,14 @@ def page(mainWidth, mainHeight):
         9. DecomposeMatrix --> InputMatrix   (C_spine01_CTL)  DecomposeMatrix.OutputTranslate to shape.ControlPoints[0]  
         10. Do the same for all the joints
     '''
-
-
+    mc.rowLayout(nc=2)
+    mc.text(l='Create Locators: ')
+    mc.button('spineLocButton', l='GO', c=lambda _: createStructureSpine())
+    mc.setParent('..') # End rowLayout
+    mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
+    mc.text(l='Create Joints: ')
+    mc.button('spineCreateButton', l='GO', c=lambda _: createSpineJoints(), en=False)
+    mc.setParent('..') # End rowColumnLayout
 
     ''' ----------------------------------- HIP ----------------------------------- 
         1. Create a controller, position it on the root spine, modify the controller
@@ -140,6 +150,24 @@ def page(mainWidth, mainHeight):
     mc.setParent( '..' ) # End columnLayout  
     return child
 
+#region SPINE
+
+def createStructureSpine():
+    global spineLocators
+
+    spineLocators = util.rigging.createLocStructure(2)
+    util.select.modifyButtonList(['spineCreateButton'], True)
+    util.select.modifyButtonList(['spineLocButton'], False)
+    util.select.setfocusMaya()
+
+def createSpineJoints():
+    global spineJoints
+
+    limbJoints.append(util.rigging.createSpineChain(spineLocators, 5))
+    util.select.setfocusMaya()
+
+
+#endRegion
 
 #region DIGITS
 def createStructureDigits():
