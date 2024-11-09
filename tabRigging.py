@@ -39,7 +39,7 @@ def page(mainWidth, mainHeight):
     # ----------------------------------------------------------------------
 
     mc.frameLayout(label='Spine', collapsable=True, collapse=False, marginWidth=5, marginHeight=5, w=mainWidth-10)
-    '''
+    ''' ----------------------------------- SPINE ----------------------------------- 
         1. Create two locators, root and end. Goes from bottom to top
         2. Calculate the distance between two point and input X amounts of joints evenly. 
         3. Create IK handle between root and end. Number spans 2, deactivate auto parent curve
@@ -47,7 +47,19 @@ def page(mainWidth, mainHeight):
         5. Create groups and controllers on each cluster, make the size bigger
         6. Parent the groups. Check the video because is not ordered by number
         7. Delete clusters
-        8. MORE
+        8. Select the curve shape
+        9. DecomposeMatrix --> InputMatrix   (C_spine01_CTL)  DecomposeMatrix.OutputTranslate to shape.ControlPoints[0]  
+        10. Do the same for all the joints
+    '''
+
+
+
+    ''' ----------------------------------- HIP ----------------------------------- 
+        1. Create a controller, position it on the root spine, modify the controller
+        2. Modify the first DecomposeMatrix, it won't be connected to spine_01 anymore, but to the controller of the HIP
+        3. Create two joints, one with the same position to the spine root, and the other one below (from top to bottom)
+        4. Parent the controller to the hip joint root
+        5. 
     '''
 
     mc.setParent('..') # End frameLayout
@@ -161,7 +173,7 @@ def createDigitsControls(digitsJoints):
     global digitsLocator
     global listControlsDigits
     global mainParentCTL
-    groupStructure = 'GRP;ANIM;OFFSET'
+    groupStructure = 'GRP;ANIM;SDK;OFFSET'
 
     for i in range(len(digitsStructures)):
         listControlsDigits.append(util.rigging.createCTLJointList(digitsJoints[i],groupStructure))
