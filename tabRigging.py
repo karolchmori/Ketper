@@ -261,6 +261,7 @@ def createSpineControllers(spineJoints):
     mc.parent('spine_01_Controls_GRP', bodyCTL)
 
     '''
+        ----------------------------------- IK HANDLE TWIST ----------------------------------- 
         1. Activate Advanced Twist Controls on IKHandle (check)
         2. World Up type = Object Rotation Up (Start/End)
         3. Forward Axis = Positive Y
@@ -269,6 +270,23 @@ def createSpineControllers(spineJoints):
         6. World Up Object = spineHip_CTL
         7. World Up Object = spine_05_CTL
     '''
+
+
+    mc.setAttr(f'{ikHandle}.dTwistControlEnable', 1)
+    mc.setAttr(f'{ikHandle}.dWorldUpType', 4) # 4 = "Object Rotation Up (Start/End)"
+    mc.setAttr(f'{ikHandle}.dForwardAxis', 2)  # 2 = Positive Y
+    mc.setAttr(f'{ikHandle}.dWorldUpAxis', 6)  # 6 = Positive X
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorX', 1)
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorY', 0)
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorZ', 0)
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorEndX', 1)
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorEndY', 0)
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorEndZ', 0)
+
+    mc.connectAttr('spineHip_CTL' + '.worldMatrix[0]', ikHandle + ".dWorldUpMatrix")
+    mc.connectAttr('spine_05_CTL' + '.worldMatrix[0]', ikHandle + ".dWorldUpMatrixEnd")
+
+
 
 #endRegion
 
