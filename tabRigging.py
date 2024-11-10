@@ -360,7 +360,48 @@ def createSpineControllers(spineJoints):
         for i in range(1, len(spineJoints[0])):
             mc.connectAttr(f"{spineStretchValueFLM}.outFloat" , f"{spineJoints[0][i]}.translateY")
 
+        # ----------------------------------------------------------------------
+        # ------------------------------- OFFSET -------------------------------
+        # ----------------------------------------------------------------------
+        '''
+            1. Do reverse curve of spineCRV (keep original)
+            2. Rename spineReverseChain_CRV
+            3. Duplicate spine JNT and rename??  spine --> spineReversed
+            4. Unparent them
+            5. Parent them reversed 5 to 1 and rename it 1 to 5 -- DONE IN 3
+            6. Save on the joint lists (NOT BEFORE. After reversing to keep the new order)
+            7. Create ikHandle spineReversed_HDL, uncheck auto parent curve, uncheck auto create curve. Root to end (selecting the new curve??? he didn't do it but pointed at it)
+            8. spineStretchValue
+        '''
+        spineReversedCRV = mc.reverseCurve(spineCRV, n= 'spineReversed_CRV' , ch=True, rpo=False)[0]
+        revJointsTemp = util.rigging.copyJoints(spineJoints[0],'rev')
+        for i in range(len(revJointsTemp)):
+            revJointsTemp[i] = mc.rename(revJointsTemp[i],f'spineRev_0{len(revJointsTemp)-i}_JNT')
 
+        #unparent --> parent to world
+        for i in range(1,len(revJointsTemp)):
+            mc.parent(revJointsTemp[i], world=True)
+
+        #parent them by order
+        for i in range(len(revJointsTemp)-1):
+            mc.parent(revJointsTemp[i], revJointsTemp[i+1])
+
+        #get new list 
+        spineJoints.append(list(reversed(revJointsTemp)))
+        print(spineJoints)
+
+        revikHandle = mc.ikHandle(n='spineReversed_HDL', sj=spineJoints[2][0], ee=spineJoints[2][len(spineJoints[2])-1], sol='ikSplineSolver', pcv=False, ccv=False, curve=spineReversedCRV)[0]
+        
+        
+        spineNegStretchValueFLM = util.rigging.floatMConnect('spineNegStretchValueFLM', 2, f"{spineStretchValueFLM}.outFloat", None)
+        mc.setAttr(spineNegStretchValueFLM + '.floatB', -1)
+        for i in range(1, len(spineJoints[2])):
+            mc.connectAttr(f"{spineNegStretchValueFLM}.outFloat" , f"{spineJoints[2][i]}.translateY")
+        
+
+        '''
+            
+        '''
 #endRegion
 
 #region DIGITS

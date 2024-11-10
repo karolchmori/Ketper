@@ -753,7 +753,7 @@ def copyJoints(listJoints, newPrefix):
     newJoints = []
     newNames = []
 
-    duplicatedJoints = mc.duplicate(listJoints, rr=True)
+    duplicatedJoints = mc.duplicate(listJoints, parentOnly=True, rr=True)
 
     newJoints = mc.listRelatives(duplicatedJoints[0], allDescendents=True, type='joint', fullPath = True)
     newJoints.append(duplicatedJoints[0])
