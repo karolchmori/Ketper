@@ -400,8 +400,30 @@ def createSpineControllers(spineJoints):
         
 
         '''
-            
+            1. Bring spineReversed05_JNT and spineCRVShape
+            2. Create nearestPointOnCurve
         '''
+
+        # Create the nearestPointOnCurve node
+        spineOffsetNPC = mc.createNode('nearestPointOnCurve', name='spineOffsetNPC')
+        mc.connectAttr(f"{spineCRVShape}.worldSpace[0]", f"{spineOffsetNPC}.inputCurve")
+
+        # Optionally set attributes like parameter
+        mc.setAttr(f"{spineOffsetNPC}.parameter", 0.5)  # Set to a specific parameter on the curve
+        spineRevDCM = mc.createNode('decomposeMatrix', name='spineRevDCM')
+        mc.connectAttr(f'{spineJoints[2][len(spineJoints[2])-1]}.worldMatrix[0]', f"{spineRevDCM}.inputMatrix")
+        mc.connectAttr(f"{spineRevDCM}.outputTranslate", f"{spineOffsetNPC}.inPosition")
+
+        spineOffsetInitialValueFLC = mc.createNode('floatConstant', name='spineOffsetInitialValueFLC')
+        mc.setAttr(f"{spineOffsetInitialValueFLC}.inFloat", 0.0)
+
+        spineOffsetBTA = mc.createNode('blendTwoAttr', name='spineOffsetBTA')
+        # Connect input1 and input2 to blendTwoAttr
+        mc.connectAttr(f"{spineOffsetInitialValueFLC}.outFloat" , f"{spineOffsetBTA}.input[0]")
+        mc.connectAttr(f"{spineOffsetNPC}.parameter" , f"{spineOffsetBTA}.input[1]")
+        mc.connectAttr(controllersList[-1] + '.offset', f"{spineOffsetBTA}.attributesBlender")
+
+        mc.connectAttr(f"{spineOffsetBTA}.output", f"{ikHandle}.offset")
 #endRegion
 
 #region DIGITS
