@@ -19,6 +19,7 @@ def createGroupStructure(text, mainName, firstParent):
         lastName = mainName+'_'+item
 
     return lastName
+#TEST
 
 
 def changeSizeCurve(obj, multiplier):

@@ -214,6 +214,7 @@ def createSpineControllers(spineJoints):
 
     hipCTL = util.create.createShape('cube')
     hipCTL = mc.rename(hipCTL, 'spineHip_CTL')
+    util.create.changeSizeCurve(hipCTL,0.75)
 
     lastGroup = util.create.createGroupStructure(groupStructure,'spineHip_Controls', None)
     mc.parent(hipCTL, lastGroup)
@@ -388,7 +389,7 @@ def createSpineControllers(spineJoints):
 
         #get new list 
         spineJoints.append(list(reversed(revJointsTemp)))
-        print(spineJoints)
+        #print(spineJoints)
 
         revikHandle = mc.ikHandle(n='spineReversed_HDL', sj=spineJoints[2][0], ee=spineJoints[2][len(spineJoints[2])-1], sol='ikSplineSolver', pcv=False, ccv=False, curve=spineReversedCRV)[0]
         
@@ -441,13 +442,18 @@ def createSpineControllers(spineJoints):
         mc.pointConstraint(spineJoints[0][0], spineJoints[1][0])
         mc.orientConstraint(hipCTL, spineJoints[1][0])
 
-        hipCTLConstraint = mc.listConnections(hipCTL, type='pointConstraint')
-        mc.delete(hipCTLConstraint)
+        hipCTLConstraint = mc.listConnections('spineHip_Controls_' + firstGroup, type='pointConstraint')
+        #print(hipCTLConstraint)
+        #mc.delete(hipCTLConstraint)
 
-        mc.pointConstraint(controllersList[0], 'spineHip_Controls_' + firstGroup)
-        
+        #mc.pointConstraint(controllersList[0], 'spineHip_Controls_' + firstGroup)
 
+    #Change size of all controllers:
+    for ctl in controllersList:
+        util.create.changeSizeCurve(ctl, 4)
 
+    mc.select(cl=True)
+    util.select.setfocusMaya()
 
 #endRegion
 

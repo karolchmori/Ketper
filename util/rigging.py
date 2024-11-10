@@ -10,7 +10,7 @@ import math
 
 orientAttr = ['jointOrientX','jointOrientY','jointOrientZ']
 
-
+#tEST
 
 def createStructureClass():
 
