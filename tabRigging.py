@@ -424,6 +424,31 @@ def createSpineControllers(spineJoints):
         mc.connectAttr(controllersList[-1] + '.offset', f"{spineOffsetBTA}.attributesBlender")
 
         mc.connectAttr(f"{spineOffsetBTA}.output", f"{ikHandle}.offset")
+
+        # ----------------------------------------------------------------------
+        # -------------------- ADDITIONAL CONSIDERATIONS -----------------------
+        # ----------------------------------------------------------------------
+        #43:03
+
+        '''
+            1. delete parent constraint on the localHipRoot_JNT
+            2. pointConstraint(spine01_JNT, localHip_JNT)
+        
+        '''
+
+        hipRootConstraint = mc.listConnections(spineJoints[1][0], type='parentConstraint')
+        mc.delete(hipRootConstraint)
+        mc.pointConstraint(spineJoints[0][0], spineJoints[1][0])
+        mc.orientConstraint(hipCTL, spineJoints[1][0])
+
+        hipCTLConstraint = mc.listConnections(hipCTL, type='pointConstraint')
+        mc.delete(hipCTLConstraint)
+
+        mc.pointConstraint(controllersList[0], 'spineHip_Controls_' + firstGroup)
+        
+
+
+
 #endRegion
 
 #region DIGITS
