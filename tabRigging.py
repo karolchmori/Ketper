@@ -129,9 +129,31 @@ def page(mainWidth, mainHeight):
     
     mc.button('digitsResetButton', l='Restart', c=lambda _: restartDigitsChain(), en=False)
     mc.setParent('..') # End frameLayout
-
-
     mc.setParent('..') # End rowLayout
+    # ----------------------------------------------------------------------
+    # -------------------------- DRIVEN KEYS -------------------------------
+    # ----------------------------------------------------------------------
+    mc.frameLayout(label='Driven keys', collapsable=False, collapse=False, marginWidth=5, marginHeight=5)
+    mc.rowColumnLayout(nc=2)
+    mc.textField()
+    mc.button(l='Load Driver')
+    mc.textField()
+    mc.button(l='GO')
+    mc.setParent('..') # End rowColumnLayout
+
+    mc.rowColumnLayout(nc=3)
+    mc.text(l='Min')
+    mc.text(l='Max')
+    mc.text(l='Default')
+    mc.floatField()
+    mc.floatField()
+    mc.floatField()
+    mc.setParent('..') # End rowColumnLayout
+    mc.button(l='Load Driven')
+    elUI.dropdownUI('test', 'label', ['yellow','white','black'],'yellow')
+    mc.setParent('..') # End frameLayout
+
+    
     mc.setParent( '..' ) # End columnLayout  
     return child
 
@@ -448,6 +470,7 @@ def createSpineControllers(spineJoints):
 
         #mc.pointConstraint(controllersList[0], 'spineHip_Controls_' + firstGroup)
 
+    # VOLUME PRESERVATION 47:16  --- 2024-10-15 09-47-05
     #Change size of all controllers:
     for ctl in controllersList:
         util.create.changeSizeCurve(ctl, 4)

@@ -160,7 +160,7 @@ def replaceCurve(oldCurve, newCurve):
     mc.delete(newCurve)
         
     crvMainShape = mc.listRelatives(oldCurve, shapes = True)[0]
-
+    #print(crvOldShape)
     mc.delete(crvOldShape)
     #mc.delete(crvMainShape)
 

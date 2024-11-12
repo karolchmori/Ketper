@@ -63,9 +63,9 @@ def page(mainWidth, mainHeight):
     mc.text(l='') #placeholder
     
     # Create three dropdown menus
-    elUI.dropdownUI('pivotXMenu', pivotMenuValues, pivotMenuValues[1])
-    elUI.dropdownUI('pivotYMenu', pivotMenuValues, pivotMenuValues[1])
-    elUI.dropdownUI('pivotZMenu', pivotMenuValues, pivotMenuValues[1])
+    elUI.dropdownUI('pivotXMenu', '', pivotMenuValues, pivotMenuValues[1])
+    elUI.dropdownUI('pivotYMenu', '', pivotMenuValues, pivotMenuValues[1])
+    elUI.dropdownUI('pivotZMenu', '', pivotMenuValues, pivotMenuValues[1])
 
     mc.button(l="OK", c=lambda _: utils.movePivot(
         choiceX=mc.optionMenu('pivotXMenu', q=True, v=True),

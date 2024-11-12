@@ -38,12 +38,12 @@ def colorSlider():
     mc.setParent('..')
 
 # Creates a Dropdown based on a list
-def dropdownUI(name, listValues,defaultValue):
-        dropdown = mc.optionMenu(name)
-        for value in listValues:
-            mc.menuItem(l=value)
+def dropdownUI(name, label, listValues,defaultValue):
+    dropdown = mc.optionMenu(name, l=label)
+    for value in listValues:
+        mc.menuItem(l=value)
 
-        mc.optionMenu(name, e=True, v=defaultValue)
+    mc.optionMenu(name, e=True, v=defaultValue)
 
 
 

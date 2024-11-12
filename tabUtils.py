@@ -445,7 +445,8 @@ def applyReplaceAction():
             for item in selectedObjects:
                 if "|" in item:
                     oldName = item.split("|")[-1]
-                    
+                else:
+                    oldName = item
                 newName = util.naming.replaceText(oldName, repfromTextValue, reptoTextValue)
                 mc.rename(item,newName)
         else:
