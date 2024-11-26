@@ -122,10 +122,10 @@ def page(mainWidth, mainHeight):
     mc.button('digitsControlsButton', l='GO', c=lambda _: createDigitsControls(digitsJoints), en=False)
     mc.setParent('..') # End rowColumnLayout
 
-    '''mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
+    mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
     mc.text(l='Connect: ')
     mc.button('digitsConnectButton', l='GO', c=lambda _:createDigitsConnection(digitsLocator, digitsJoints, mainParentCTL), en=False)
-    mc.setParent('..') # End rowColumnLayout'''
+    mc.setParent('..') # End rowColumnLayout
     
     mc.button('digitsResetButton', l='Restart', c=lambda _: restartDigitsChain(), en=False)
     mc.setParent('..') # End frameLayout
@@ -501,7 +501,7 @@ def createDigitsJoints(digitsStructures):
         digitsJoints.append(util.rigging.createDigitsChain(digitsStructures[i]))
 
 
-    #util.select.modifyButtonList(['digitsConnectButton'], True)
+    util.select.modifyButtonList(['digitsConnectButton'], True)
     util.select.modifyButtonList(['digitsControlsButton'], True)
     util.select.modifyButtonList(['digitsCreateButton'], False)
 
@@ -527,7 +527,7 @@ def createDigitsControls(digitsJoints):
     #digitsLocator = mc.spaceLocator(n='connect_LOC')[0]
     #util.rigging.addInternalName(digitsLocator, digitsLocator)
 
-    #util.select.modifyButtonList(['digitsConnectButton'], True)
+    util.select.modifyButtonList(['digitsConnectButton'], True)
     util.select.modifyButtonList(['digitsControlsButton'], False)
 
     util.select.setfocusMaya()
