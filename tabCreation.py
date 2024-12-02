@@ -40,10 +40,12 @@ def page(mainWidth, mainHeight):
     mc.setParent('..') # End rowColumnLayout
     mc.text(l='')
     elUI.separatorTitleUI('Other features',5,20,mainWidth-45)
-    mc.rowLayout(nc=2)
+    mc.rowLayout(nc=3)
     mc.text(l=' Size: ')
-    mc.floatSliderGrp('shapeSizeSlider', field=True, minValue=0.1, maxValue=2, value=1, w=150, pre=2, columnWidth=[(1, 0)],
-                      dragCommand=lambda *args: modifySizeShapes(mc.floatSliderGrp('shapeSizeSlider', query=True, value=True)) if modifySizeShapes else None)
+    mc.floatField('shapeSizeField', min=0.1 , max=2, v=1, pre=2, w=50)
+    mc.button('shapeSizeBTN', l='OK', c= lambda *args: modifySizeShapes(mc.floatField('shapeSizeField', query=True, value=True)) if modifySizeShapes else None)
+    #mc.floatSliderGrp('shapeSizeSlider', field=True, minValue=0.1, maxValue=2, value=1, w=150, pre=2, columnWidth=[(1, 0)],
+    #                  dragCommand=lambda *args: modifySizeShapes(mc.floatSliderGrp('shapeSizeSlider', query=True, value=True)) if modifySizeShapes else None)
     mc.setParent('..') # End rowLayout
     slider = elUI.colorSlider()
     mc.setParent('..') # End ColumnLayout
@@ -146,9 +148,6 @@ def modifySizeShapes(factor):
             util.create.changeSizeCurve(obj, factor)
     
     mc.select(cl=True)
-
-    mc.floatSliderGrp('shapeSizeSlider', edit=True, value=1)
-
     mc.select(selectedObjects)
     
 

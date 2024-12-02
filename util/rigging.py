@@ -56,6 +56,17 @@ def createStructureClass():
     mc.group(em=True, name='groom_GRP', parent='assetName')
     mc.group(em=True, name='clothSim_GRP', parent='assetName')
 
+def orientAimJoints(jointList):
+
+    for i in range(1,len(jointList)):
+        nextValue = 0 if i == (len(jointList)-1) else i+1
+        print(f"AIM CONSTRAINT de {jointList[i]}, con {jointList[i-1]}, orientado en objeto {jointList[nextValue]}")
+        mc.aimConstraint(jointList[i],jointList[i-1], wut='object', wuo=jointList[nextValue], aim=(1,0,0), u=(0,0,1))
+        mc.delete( f"{jointList[i-1]}_aimConstraint1")
+
+def parentJoints(jointList):
+    for i in reversed(range(1, len(jointList))):
+        mc.parent(jointList[i],jointList[i-1])
 
 def nullJointOrients(joint):
     mc.setAttr(joint + '.' + orientAttr[0], 0)
@@ -187,8 +198,6 @@ def createSpineChain(locatorList, totalJoints):
     return newJoints
 
 
-
-
 #endRegion
 
 #region Digits Related
@@ -225,6 +234,7 @@ def createDigitsChain(obj):
 
     mc.delete(originalObj)
     
+
     #Orientation
     for i in range(len(jointChain)-1):
         locatorTemp = mc.spaceLocator()[0]
@@ -235,15 +245,16 @@ def createDigitsChain(obj):
 
         mc.delete( f"{jointChain[i]}_aimConstraint1", locatorTemp)
 
+    #orientAimJoints(jointChain) Flips the second joint dont know why
 
     #Freeze transformation in rotation
     mc.select(jointChain)
     mc.makeIdentity(apply=True, rotate=True )
     mc.select(cl=True)
 
-
-    for i in reversed(range(1, len(jointChain))):
-        mc.parent(jointChain[i],jointChain[i-1])
+    parentJoints(jointChain)
+    #for i in reversed(range(1, len(jointChain))):
+    #    mc.parent(jointChain[i],jointChain[i-1])
 
     
     #Clear JointOrients of last joint (Important to do it at the end)
@@ -309,53 +320,19 @@ def createLimbChain(locatorList, limbName):
 
     mc.joint(p=positionList[2], name = jointNames[2])
     mc.select(cl=True)
+    
+    orientAimJoints(jointNames)
 
-    #Works
-    '''
-    1. First set the rotations and joint orients to 0 0 0
-    2. Create a locator that will be above the joint we want to constraint, move the locator in the Y axis
-    3. Do the aim constraint looking at the locator
-    4. Delete constraint and locator
-    '''
-    '''
-    for i in range(len(jointNames)-1):
-        locatorTemp = mc.spaceLocator()[0]
-        mc.matchTransform(locatorTemp, jointNames[i], scl=False, rot=False, pos=True)
-
-        if limbName == 'arm':
-            mc.move(0, 5, 0, locatorTemp, relative=True)
-            mc.aimConstraint(jointNames[i+1],jointNames[i], wut='object', wuo=locatorTemp, aim=(1,0,0), u=(0,1,0))
-
-        elif limbName == 'leg':
-            mc.move(0, 0, 5, locatorTemp, relative=True)
-            mc.aimConstraint(jointNames[i+1],jointNames[i], wut='object', wuo=locatorTemp, aim=(0,1,0), u=(0,0,1))
-
-        mc.delete( f"{jointNames[i]}_aimConstraint1", locatorTemp)
-    '''
-    #TODO FIX it dinamic
-    #Aim Constraints to get the correct orientation
-    mc.aimConstraint(jointNames[1],jointNames[0], wut='object', wuo=jointNames[2], aim=(1,0,0), u=(0,0,1))
-    mc.delete( f"{jointNames[0]}_aimConstraint1")
-    mc.aimConstraint(jointNames[2],jointNames[1], wut='object', wuo=jointNames[0], aim=(1,0,0), u=(0,0,1))
-    mc.delete( f"{jointNames[1]}_aimConstraint1")
-    
-    
-    #FREEZE ALL
-    
-    #GROUP THEM
-    
-    
-    #NULLIFY LAST JOINT
-
-    
     #Freeze transformation in rotation
     mc.select(jointNames)
     mc.makeIdentity(apply=True, rotate=True )
     mc.select(cl=True)
-    
+
     #Group them
-    mc.parent(jointNames[2],jointNames[1])
-    mc.parent(jointNames[1],jointNames[0])
+    parentJoints(jointNames)
+    
+    #mc.parent(jointNames[2],jointNames[1])
+    #mc.parent(jointNames[1],jointNames[0])
     
     #Clear JointOrients of last joint (Important to do it at the end)
     nullJointOrients(jointNames[2])
@@ -922,30 +899,6 @@ def floatMConnect(name, operation, floatA, floatB):
     return node
 #endregion
 
-
-#TODO CHECK --------------------------------------------------------------------------------------------------------------------
-def mirrorJointChain():
-    selected_joints = mc.ls(selection=True, type='joint')
-
-    if len(selected_joints) > 1 or len(selected_joints) == 0:
-        print("Please select a joint chain")
-        return
-    for joint in selected_joints:
-        mirrored_joint = mc.mirrorJoint(joint, mirrorYZ=True, searchReplace=('_L', '_R'))
-
-
-#Create a IK leg
-def createLegIK():
-    # Create the joint chain
-    hip_joint = mc.joint(p=(0, 10, 0), name="L_hip_joint")
-    knee_joint = mc.joint(p=(0, 5, 2), name="L_knee_joint")
-    ankle_joint = mc.joint(p=(0, 0, 0), name="L_ankle_joint")
-    mc.select(clear=True)
-    
-    # Create IK handle
-    ik_handle = mc.ikHandle(solver="ikRPsolver", startJoint= hip_joint, endEffector = ankle_joint, name="leg_ikHandle")[0]
-    
-    mc.select(clear=True)
  
 
 #endregion

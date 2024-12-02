@@ -22,16 +22,26 @@ def createGroupStructure(text, mainName, firstParent):
 #TEST
 
 
-def changeSizeCurve(obj, multiplier):
+def changeSizeCurve(obj, size):
 
     # Get the list of CVs for the specified curve
     cvs = mc.ls(f"{obj}.cv[*]", flatten=True)
     if cvs:
-        # Select all CVs of the curve
-        mc.select(cvs, replace=True)
+        bbox = mc.exactWorldBoundingBox(cvs)
+
+        # The pivot point is the center of the bounding box
+        pivot_point = [
+            (bbox[0] + bbox[3]) / 2,  # X center
+            (bbox[1] + bbox[4]) / 2,  # Y center
+            (bbox[2] + bbox[5]) / 2   # Z center
+        ]
+
+        currentSize = max(bbox[3] - bbox[0], bbox[4] - bbox[1], bbox[5] - bbox[2])  # Largest dimension
+
+        scaleFactor = size / currentSize
 
         # Calculate the pivot point as the average position of selected CVs
-        pivot_point = [0.0, 0.0, 0.0]
+        '''pivot_point = [0.0, 0.0, 0.0]
         numCvs = len(cvs)
         for cv in cvs:
             pos = mc.pointPosition(cv, world=True)
@@ -40,10 +50,10 @@ def changeSizeCurve(obj, multiplier):
             pivot_point[2] += pos[2]
         
         # Average out to get the center point
-        pivot_point = [coord / numCvs for coord in pivot_point]
+        pivot_point = [coord / numCvs for coord in pivot_point]'''
 
         # Scale the CVs relative to their center pivot point
-        mc.scale(multiplier, multiplier, multiplier, cvs, relative=False, pivot=pivot_point)
+        mc.scale(scaleFactor, scaleFactor, scaleFactor, cvs, relative=False, pivot=pivot_point)
 
 
 
