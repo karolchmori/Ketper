@@ -134,7 +134,7 @@ def createFootChain(locatorList):
     mainName = naming.modifyNameList('replace',newLocatorList,'_LOC', '')
     jointNames = naming.modifyNameList('suffix',mainName,'_JNT', '')
 
-    #Delete Limb locators
+    #Delete locators (we'll create new ones for the IK)
     mc.delete(newLocatorList)
 
     
@@ -150,14 +150,8 @@ def createFootChain(locatorList):
     mc.joint(p=positionList[2], name = jointNames[2])
     mc.select(cl=True)
     
+    orientAimJoints(jointNames)
     
-    #Modify Orientation
-    for i in range(len(jointNames)-1):
-        locatorTemp = mc.spaceLocator()[0]
-        mc.matchTransform(locatorTemp, jointNames[i], scl=False, rot=False, pos=True)
-        mc.move(0, 0, 5, locatorTemp, relative=True)
-        mc.aimConstraint(jointNames[i+1],jointNames[i], wut='object', wuo=locatorTemp, aim=(0,1,0), u=(0,0,1))
-        mc.delete( f"{jointNames[i]}_aimConstraint1", locatorTemp)
 
     #Freeze transformation in rotation
     mc.select(jointNames)
@@ -184,6 +178,8 @@ def createLocStructure(num):
         locatorNames = ['root_LOC','mid_LOC','end_LOC']
     elif num == 4:
         locatorNames = ['A_LOC','B_LOC','C_LOC','D_LOC']
+    elif num == 7:
+        locatorNames = ['ankle_LOC','toe_LOC','toe_tip_LOC','ball_LOC','in_bank_LOC','out_bank_LOC','heel_LOC']
 
     for loc in locatorNames:
         mc.spaceLocator(n=loc)
@@ -720,6 +716,8 @@ def createCTLJointList(listJoints, groupStructure):
             newName = naming.modifyName('replace',joint, '_HDL','')
         elif joint[-3:] == 'JNT':
             newName = naming.modifyName('replace',joint, '_JNT','')
+        elif joint[-3:] == 'LOC':
+            newName = naming.modifyName('replace',joint, '_LOC','')
 
         nameCTL = newName + '_CTL'
         lastRoot = create.createGroupStructure(groupStructure,newName, lastRoot)
@@ -736,18 +734,22 @@ def createCTLJointList(listJoints, groupStructure):
         lastRoot = nameCTL
         listControls.append(nameCTL)
 
+
     #Modifying orientation and position
     for joint in listJoints:
-        
+
         newName = joint
         if joint[-3:] == 'HDL':
             newName = naming.modifyName('replace',joint, '_HDL','')
         elif joint[-3:] == 'JNT':
             newName = naming.modifyName('replace',joint, '_JNT','')
+        elif joint[-3:] == 'LOC':
+            newName = naming.modifyName('replace',joint, '_LOC','')
         
 
         #Create the groupRoot and snap it to the joint
         groupRoot = newName + '_' + firstRoot
+        print(f"POSITION {groupRoot} to {joint}")
         mc.matchTransform(groupRoot, joint, pos=True)
         
         if joint[-3:] == 'JNT':

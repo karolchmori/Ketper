@@ -143,9 +143,11 @@ def page(mainWidth, mainHeight):
     mc.text(l='Create Locators: ')
     mc.button('footLocButton', l='GO', c= lambda _: createStructureFoot())
     mc.setParent('..') # End rowLayout
-    mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
+    mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/3)])
     mc.text(l='Create Joints: ')
     mc.button('footCreateButton', l='GO', c= lambda _: createFootJoints())
+    mc.text(l='Create Locators Reverse Foot: ')
+    mc.button('footIKLocButton', l='GO', c= lambda _: createStructureRevFoot())
     mc.text(l='Create Controllers: ')
     mc.button('footControlsButton', l='GO', c= lambda _: createFootControllers())
     mc.setParent('..') # End rowColumnLayout
@@ -186,11 +188,8 @@ def page(mainWidth, mainHeight):
 
 def createStructureFoot():
     global footLocators
-    global footIKLocators
 
     footLocators = util.rigging.createLocStructure(3)
-    footIKLocators = util.rigging.createLocStructure(4)
-
 
 def createFootJoints():
     global footJoints
@@ -198,8 +197,13 @@ def createFootJoints():
     footJoints.append(util.rigging.createFootChain(footLocators))
     util.select.setfocusMaya()
 
+def createStructureRevFoot():
+    global footIKLocators
+    footIKLocators = util.rigging.createLocStructure(7)
+
+
 def createFootControllers():
-    
+    global footIKLocators
     groupStructure = 'GRP;ANIM;OFFSET'
     firstGroup = groupStructure.split(';')[0]
 
@@ -209,8 +213,43 @@ def createFootControllers():
     # ----------------------------------------------------------------------
     
     footJoints.append(util.rigging.copyJoints(footJoints[0],'IK'))
-    #footIKLocators
+    footIKLoc = mc.duplicate(footIKLocators[0])
+    footIKLoc = mc.rename(footIKLoc, 'foot_IK_LOC')
 
+    footIKLocators.append(footIKLoc)
+
+    for loc in footIKLocators:
+        groupName = util.naming.replaceText(loc, '_LOC', '_loc')
+        lastGroup = util.create.createGroupStructure(groupStructure, groupName, None)
+        mc.matchTransform(groupName + '_' + firstGroup, loc, pos=True)
+        mc.parent(loc, lastGroup)
+        mc.setAttr(loc + '.translateX', 0)
+        mc.setAttr(loc + '.translateY', 0)
+        mc.setAttr(loc + '.translateZ', 0)
+    
+    mc.parent('heel_loc_GRP', 'foot_IK_LOC')
+    mc.parent('out_bank_loc_GRP', 'heel_LOC')
+    mc.parent('in_bank_loc_GRP', 'out_bank_LOC')
+    mc.parent('toe_tip_loc_GRP', 'in_bank_LOC')
+    mc.parent('toe_loc_GRP', 'toe_tip_LOC')
+    mc.parent('ball_loc_GRP', 'toe_tip_LOC')
+    mc.parent('ankle_loc_GRP', 'ball_LOC')
+
+       
+    footIKLocatorsRev = list(reversed(footIKLocators))
+    listControlsIK = util.rigging.createCTLJointList(footIKLocatorsRev[1:7],groupStructure)
+    mc.parent('toe_tip_GRP','in_bank_CTL')
+    mc.parent('ball_GRP','toe_tip_CTL')
+
+    
+    mc.parentConstraint('ankle_LOC',footJoints[1][0], mo=True)
+    mc.parentConstraint('toe_LOC',footJoints[1][1], mo=True)
+
+    #Parent CTLs and LOC
+    for ctl in listControlsIK:
+        mc.parentConstraint(ctl, util.naming.replaceText(ctl,'_CTL','_LOC'))
+    
+    
     # ----------------------------------------------------------------------
     # ----------------------------- CREATE FK ------------------------------
     # ----------------------------------------------------------------------
@@ -222,6 +261,23 @@ def createFootControllers():
     tempRoot = tempName + '_' + firstGroup
     lastGroup = util.create.createGroupStructure(groupStructure,'FK_foot_Controls', None)
     mc.parent(tempRoot, lastGroup)
+
+
+
+    '''#Add attribute and visibility with controls
+    mc.select(controlName)
+    mc.addAttr( longName='switchIKFK', niceName= 'Switch IK / FK' , attributeType="float", dv=0, max=1, min=0, h=False, k=True)
+    mc.connectAttr(f"{controlName}.switchIKFK", f"FK_{limbName}_Controls_" + firstGroup + ".visibility", force=True)
+    reverseNode = mc.createNode('reverse', name=f'{limbName}_switchIKFK_REVERSE') 
+    mc.connectAttr(f"{controlName}.switchIKFK", f"{reverseNode}.inputX", force=True)
+    mc.connectAttr(f"{reverseNode}.outputX", f"IK_{limbName}_Controls_" + firstGroup + ".visibility", force=True) '''
+
+    # ----------------------------------------------------------------------
+    # --------------------------- PAIR BLENDS ------------------------------
+    # ----------------------------------------------------------------------
+    for i in range(len(footJoints[0])):
+        pbNode = util.rigging.createPB(footJoints[0][i], footJoints[1][i], footJoints[2][i], True, True)
+        #mc.connectAttr(f"{controlName}.switchIKFK", f"{pbNode}.weight", force=True) 
 
 #endregion
 
