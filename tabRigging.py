@@ -20,6 +20,10 @@ spineLocators = []
 spineJoints = []
 
 
+footLocators = []
+footIKLocators = []
+footJoints = []
+
 
 def page(mainWidth, mainHeight):
 
@@ -130,7 +134,28 @@ def page(mainWidth, mainHeight):
     mc.button('digitsResetButton', l='Restart', c=lambda _: restartDigitsChain(), en=False)
     mc.setParent('..') # End frameLayout
     mc.setParent('..') # End rowLayout
+
     # ----------------------------------------------------------------------
+    # -------------------------- REVERSE FOOT ------------------------------
+    # ----------------------------------------------------------------------
+    mc.frameLayout(label='Reverse Foot', collapsable=False, collapse=False, marginWidth=5, marginHeight=5)
+    mc.rowLayout(nc=2)
+    mc.text(l='Create Locators: ')
+    mc.button('footLocButton', l='GO', c= lambda _: createStructureFoot())
+    mc.setParent('..') # End rowLayout
+    mc.rowColumnLayout(nc=2, cal=([1,'left'],[2,'center']), cw=[(1, limbSectionWidth), (2, limbSectionWidth/2)])
+    mc.text(l='Create Joints: ')
+    mc.button('footCreateButton', l='GO', c= lambda _: createFootJoints())
+    mc.text(l='Create Controllers: ')
+    mc.button('footControlsButton', l='GO', c= lambda _: createFootControllers())
+    mc.setParent('..') # End rowColumnLayout
+
+    mc.setParent('..') # End frameLayout
+
+
+
+
+    '''    # ----------------------------------------------------------------------
     # -------------------------- DRIVEN KEYS -------------------------------
     # ----------------------------------------------------------------------
     mc.frameLayout(label='Driven keys', collapsable=False, collapse=False, marginWidth=5, marginHeight=5)
@@ -151,11 +176,54 @@ def page(mainWidth, mainHeight):
     mc.setParent('..') # End rowColumnLayout
     mc.button(l='Load Driven')
     elUI.dropdownUI('test', 'label', ['yellow','white','black'],'yellow')
-    mc.setParent('..') # End frameLayout
+    mc.setParent('..') # End frameLayout '''
 
     
     mc.setParent( '..' ) # End columnLayout  
     return child
+
+#region REVERSE FEET
+
+def createStructureFoot():
+    global footLocators
+    global footIKLocators
+
+    footLocators = util.rigging.createLocStructure(3)
+    footIKLocators = util.rigging.createLocStructure(4)
+
+
+def createFootJoints():
+    global footJoints
+
+    footJoints.append(util.rigging.createFootChain(footLocators))
+    util.select.setfocusMaya()
+
+def createFootControllers():
+    
+    groupStructure = 'GRP;ANIM;OFFSET'
+    firstGroup = groupStructure.split(';')[0]
+
+    
+    # ----------------------------------------------------------------------
+    # ----------------------------- CREATE IK ------------------------------
+    # ----------------------------------------------------------------------
+    
+    footJoints.append(util.rigging.copyJoints(footJoints[0],'IK'))
+    #footIKLocators
+
+    # ----------------------------------------------------------------------
+    # ----------------------------- CREATE FK ------------------------------
+    # ----------------------------------------------------------------------
+
+    footJoints.append(util.rigging.copyJoints(footJoints[0],'FK'))
+    listControlsFK = util.rigging.createCTLJointList(footJoints[2][1:],groupStructure)
+    util.rigging.parentControlJoints(listControlsFK,footJoints[2][1:])
+    tempName = util.naming.modifyName('replace',footJoints[2][1],'_JNT','')
+    tempRoot = tempName + '_' + firstGroup
+    lastGroup = util.create.createGroupStructure(groupStructure,'FK_foot_Controls', None)
+    mc.parent(tempRoot, lastGroup)
+
+#endregion
 
 #region SPINE
 

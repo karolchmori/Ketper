@@ -114,6 +114,66 @@ def getObjByInternalName(internalName):
             newObject = obj
             return newObject
 
+
+def createFootChain(locatorList):
+    
+    #We get original internal names ex houlder_LOC and we need to look for the new names ex joint_01_JNT
+    newLocatorList = [] #Equals to joint_01_JNT ------- NEW NAME
+    mainName = [] #Equals to joint_01 ------- NEW NAME
+
+    # Select only locators with OLD NAMES but saving in the same order with NEW NAME
+    for loc in locatorList:
+        newLoc = getObjByInternalName(loc)
+        if newLoc: 
+            newLocatorList.append(newLoc)
+ 
+    # Get position using NEW NAMES
+    positionList = getPositionList(newLocatorList)
+
+    # Create NEW NAMES
+    mainName = naming.modifyNameList('replace',newLocatorList,'_LOC', '')
+    jointNames = naming.modifyNameList('suffix',mainName,'_JNT', '')
+
+    #Delete Limb locators
+    mc.delete(newLocatorList)
+
+    
+    # When creating a joint without parenting we are also saving the OLD NAME in an attribute
+    mc.select(cl=True)
+    #TODO: FIX: The problem is the position
+    mc.joint(p=positionList[0], name = jointNames[0])
+    mc.select(cl=True)
+
+    mc.joint(p=positionList[1],  name = jointNames[1])
+    mc.select(cl=True)
+
+    mc.joint(p=positionList[2], name = jointNames[2])
+    mc.select(cl=True)
+    
+    
+    #Modify Orientation
+    for i in range(len(jointNames)-1):
+        locatorTemp = mc.spaceLocator()[0]
+        mc.matchTransform(locatorTemp, jointNames[i], scl=False, rot=False, pos=True)
+        mc.move(0, 0, 5, locatorTemp, relative=True)
+        mc.aimConstraint(jointNames[i+1],jointNames[i], wut='object', wuo=locatorTemp, aim=(0,1,0), u=(0,0,1))
+        mc.delete( f"{jointNames[i]}_aimConstraint1", locatorTemp)
+
+    #Freeze transformation in rotation
+    mc.select(jointNames)
+    mc.makeIdentity(apply=True, rotate=True )
+    mc.select(cl=True)
+
+    
+    for i in reversed(range(1,len(jointNames))):
+        mc.parent(jointNames[i],jointNames[i-1])
+    
+    #Clear JointOrients of last joint (Important to do it at the end)
+    nullJointOrients(jointNames[len(jointNames)-1])
+
+    return jointNames
+
+
 #region Spine Related
 
 def createLocStructure(num):
@@ -122,6 +182,8 @@ def createLocStructure(num):
         locatorNames = ['root_LOC','end_LOC']
     elif num == 3:
         locatorNames = ['root_LOC','mid_LOC','end_LOC']
+    elif num == 4:
+        locatorNames = ['A_LOC','B_LOC','C_LOC','D_LOC']
 
     for loc in locatorNames:
         mc.spaceLocator(n=loc)

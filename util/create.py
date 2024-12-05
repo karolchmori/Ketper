@@ -19,7 +19,21 @@ def createGroupStructure(text, mainName, firstParent):
         lastName = mainName+'_'+item
 
     return lastName
-#TEST
+
+def rotateCurve(obj, x, y, z):
+    cvs = mc.ls(f"{obj}.cv[*]", flatten=True)
+    if cvs:
+        bbox = mc.exactWorldBoundingBox(cvs)
+
+        # The pivot point is the center of the bounding box
+        pivot_point = [
+            (bbox[0] + bbox[3]) / 2,  # X center
+            (bbox[1] + bbox[4]) / 2,  # Y center
+            (bbox[2] + bbox[5]) / 2   # Z center
+        ]
+
+        print(f"rotate: {obj}, {x} - {y} - {z}")
+        mc.rotate(x, y, z, cvs, relative=True, pivot=pivot_point)
 
 
 def changeSizeCurve(obj, size):
@@ -102,9 +116,9 @@ def createShape(shape):
     elif shape == 'rhombus':
         result = mc.curve(d=1, p=[(0,0,1),(0.75,0,0),(0,0,-1),(-0.75,0,0),(0,0,1)])
     elif shape == 'circle':
-        result = mc.circle(nr=(0,1,0))
+        result = mc.circle(nr=(0,1,0), ch=False)
     elif shape == 'compass':
-        result = mc.circle(nr=(0,1,0), d=1, s=18)
+        result = mc.circle(nr=(0,1,0), d=1, s=18, ch=False)
         mc.move(0, 0, 1.5, result[0]+'.cv[9]', absolute=True)
     elif shape == 'cube': #Create first the points
         myCube = mc.curve(d=1,p=[(0,0,0),(1,0,0),(1,0,1),(0,0,1),(0,0,0),
@@ -123,9 +137,9 @@ def createShape(shape):
 
     elif shape == 'sphere':
 
-        firstCircle = mc.circle(nr=(0,1,0))
-        secondCircle = mc.circle(nr=(1,0,0))
-        thirdCircle = mc.circle(nr=(0,0,1))
+        firstCircle = mc.circle(nr=(0,1,0), ch=False)
+        secondCircle = mc.circle(nr=(1,0,0), ch=False)
+        thirdCircle = mc.circle(nr=(0,0,1), ch=False)
 
         mc.select(firstCircle, secondCircle, thirdCircle)
         
@@ -176,9 +190,9 @@ def replaceCurve(oldCurve, newCurve):
 
     mc.rename(firstCRV, crvMainShape)
         
-#replaceCurve(['connect_CTL','curve1'])
 
-def changeColorShape(slider):
+
+def changeColorCurve(slider):
     color = mc.colorIndexSliderGrp(slider, q=True, value=True)
     sel = mc.ls(selection=True, long=True)
 

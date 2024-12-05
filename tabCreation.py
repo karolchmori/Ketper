@@ -42,11 +42,24 @@ def page(mainWidth, mainHeight):
     elUI.separatorTitleUI('Other features',5,20,mainWidth-45)
     mc.rowLayout(nc=3)
     mc.text(l=' Size: ')
-    mc.floatField('shapeSizeField', min=0.1 , max=2, v=1, pre=2, w=50)
+    mc.floatField('shapeSizeField', min=0.1 , v=2, pre=2, w=50)
     mc.button('shapeSizeBTN', l='OK', c= lambda *args: modifySizeShapes(mc.floatField('shapeSizeField', query=True, value=True)) if modifySizeShapes else None)
-    #mc.floatSliderGrp('shapeSizeSlider', field=True, minValue=0.1, maxValue=2, value=1, w=150, pre=2, columnWidth=[(1, 0)],
-    #                  dragCommand=lambda *args: modifySizeShapes(mc.floatSliderGrp('shapeSizeSlider', query=True, value=True)) if modifySizeShapes else None)
     mc.setParent('..') # End rowLayout
+
+    mc.rowColumnLayout(nc=5, columnSpacing=[(2, 5), (3, 5), (4, 5),(5, 5)])
+    mc.text(l='Rotate')
+    mc.text(l='X')
+    mc.text(l='Y')
+    mc.text(l='Z')
+    mc.text(l='') #placeholder
+    mc.floatField('shapeRotateField', pre=2, w=50, v=90)
+    mc.checkBox('rotateXCB', l='', v=True)
+    mc.checkBox('rotateYCB', l='', v=False)
+    mc.checkBox('rotateZCB', l='', v=False)
+    mc.button(l='OK', c=lambda *args:  rotateSizeShapes(mc.floatField('shapeRotateField', query=True, value=True)) if rotateSizeShapes else None)
+    mc.setParent('..') # End rowColumnLayout
+
+
     slider = elUI.colorSlider()
     mc.setParent('..') # End ColumnLayout
     mc.setParent('..') # End frameLayout
@@ -146,6 +159,19 @@ def modifySizeShapes(factor):
     if selectedObjects:
         for obj in selectedObjects:
             util.create.changeSizeCurve(obj, factor)
+    
+    mc.select(cl=True)
+    mc.select(selectedObjects)
+
+def rotateSizeShapes(factor):
+    selectedObjects = mc.ls(selection=True)
+    xBool = mc.checkBox('rotateXCB', q=True, v=True)
+    yBool = mc.checkBox('rotateYCB', q=True, v=True)
+    zBool = mc.checkBox('rotateZCB', q=True, v=True)
+
+    if selectedObjects:
+        for obj in selectedObjects:
+            util.create.rotateCurve(obj, factor if xBool else 0, factor if yBool else 0, factor if zBool else 0)
     
     mc.select(cl=True)
     mc.select(selectedObjects)

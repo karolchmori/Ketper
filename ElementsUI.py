@@ -1,5 +1,6 @@
 import maya.cmds as mc
 import dataFunctions as utils
+import util
 
 
 #region UI elements
@@ -34,7 +35,7 @@ def separatorTitleUI(text, heightSep, widthStart, widthTotal):
 def colorSlider():
     mc.rowColumnLayout(numberOfColumns=2)
     slider = mc.colorIndexSliderGrp(min=1, max=32)
-    mc.button(l="OK", command=lambda _: utils.changeColorShape(slider))
+    mc.button(l="OK", command=lambda _: util.create.changeColorCurve(slider))
     mc.setParent('..')
 
 # Creates a Dropdown based on a list
