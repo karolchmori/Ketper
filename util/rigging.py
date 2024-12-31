@@ -966,3 +966,88 @@ def floatMConnect(name, operation, floatA, floatB):
  
 
 #endregion
+
+
+# TODO: NECK SAVIOUR
+'''def import maya.cmds as mc
+
+def createSpineControllers(spineJoints):
+     ----------------------------------- SPINE ----------------------------------- 
+        1. Create two locators, root and end. Goes from bottom to top
+        2. Calculate the distance between two point and input X amounts of joints evenly. 
+        3. Create IK handle between root and end. Number spans 2, deactivate auto parent curve
+        4. DONT DO ----- Create clusters in each cv of the curve , create it on each cv
+        5. Create groups and controllers on each cluster, make the size bigger
+        6. Parent the groups. Check the video because is not ordered by number
+        7. DONT DO ----- Delete clusters
+    
+    groupStructure = 'GRP;ANIM;OFFSET'
+    firstGroup = groupStructure.split(';')[0]
+    controllersList = []
+
+
+    ikHandle = mc.ikHandle(n='neck_HDL', sj=spineJoints[0][0], ee=spineJoints[0][len(spineJoints[0])-1], sol='ikSplineSolver', ns=2, pcv=False, ccv=True)[0] 
+    spineCRV = mc.listConnections(ikHandle + ".inCurve", type="nurbsCurve")[0]
+    spineCRV = mc.rename(spineCRV, 'neck_CRV')
+
+    numCvs = mc.getAttr(f"{spineCRV}.degree") + mc.getAttr(f"{spineCRV}.spans")
+    for i in range(len(spineJoints[0])):
+        # Get the position of each CV
+        controller = util.create.createShape('circle')[0]
+        controller = mc.rename(controller, f'neck_0{i+1}_CTL')
+        lastGroup = util.create.createGroupStructure(groupStructure,f'neck_0{i+1}_Controls', None)
+        mc.parent(controller, lastGroup)
+        mc.matchTransform(f'neck_0{i+1}_Controls_' + firstGroup, spineJoints[0][i], pos=True)
+        controllersList.append(controller)
+
+    #Parent like video
+    mc.parent('neck_02_Controls_' + firstGroup, 'neck_01_CTL')
+    mc.parent('neck_03_Controls_' + firstGroup, 'neck_02_CTL')
+
+
+    
+        8. Select the curve shape
+        9. DecomposeMatrix --> InputMatrix   (C_spine01_CTL)  DecomposeMatrix.OutputTranslate to shape.ControlPoints[0]  
+        10. Do the same for all the controllers
+    
+
+    spineCRVShape = mc.listRelatives(spineCRV, shapes=True)[0]
+    firstDCMNode = None
+    for i in range(len(controllersList)):
+        node = mc.createNode('decomposeMatrix', name= f'neck_0{i+1}_CVDCM')
+        if i == 0:
+            firstDCMNode = node
+        mc.connectAttr(controllersList[i] + '.worldMatrix[0]', node + '.inputMatrix')
+        mc.connectAttr(node + '.outputTranslate', spineCRVShape + f'.controlPoints[{i}]') #Later we have to change 1,2 to 2, 4
+
+
+    
+        ----------------------------------- IK HANDLE TWIST ----------------------------------- 
+        1. Activate Advanced Twist Controls on IKHandle (check)
+        2. World Up type = Object Rotation Up (Start/End)
+        3. Forward Axis = Positive Y
+        4. Up Axis = Positive X
+        5. Up vector (1,0,0) ---- Up Vector 2 (1,0,0)
+        6. World Up Object = spineHip_CTL
+        7. World Up Object = spine_05_CTL
+    
+
+
+    mc.setAttr(f'{ikHandle}.dTwistControlEnable', 1)
+    mc.setAttr(f'{ikHandle}.dWorldUpType', 4) # 4 = "Object Rotation Up (Start/End)"
+    mc.setAttr(f'{ikHandle}.dForwardAxis', 2)  # 2 = Positive Y
+    mc.setAttr(f'{ikHandle}.dWorldUpAxis', 6)  # 6 = Positive X
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorX', 0)
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorY', 0)
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorZ', 1)
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorEndX', 0)
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorEndY', 0)
+    mc.setAttr(f'{ikHandle}.dWorldUpVectorEndZ', 1)
+
+    mc.connectAttr('neck_01_CTL' + '.worldMatrix[0]', ikHandle + ".dWorldUpMatrix")
+    mc.connectAttr('neck_03_CTL' + '.worldMatrix[0]', ikHandle + ".dWorldUpMatrixEnd")
+
+
+createSpineControllers([['neck_01_JNT','neck_02_JNT','neck_03_JNT']])
+
+'''

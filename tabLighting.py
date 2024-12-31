@@ -38,7 +38,7 @@ def page(mainWidth, mainHeight):
 
 def loadCurrentLayer():
     currentLayer = util.rendering.getCurrentLayer()
-    currentLayer = util.naming.modifyName("delete",currentLayer,"rs_")
+    currentLayer = util.naming.modifyName("replace",currentLayer,"rs_",'')
     
     mc.textScrollList('enabledAOVList', edit=True, removeAll=True)
     mc.textScrollList('activeAOVList', edit=True, removeAll=True)
@@ -55,7 +55,7 @@ def loadCurrentLayer():
         #Starting point
         for aov in activeAOVList:
             if len(aov) != 0:
-                newName = util.naming.modifyName('delete', aov, 'aiAOV_')
+                newName = util.naming.modifyName('replace', aov, 'aiAOV_','')
                 if aov in enabledAOVList:
                     mc.textScrollList('enabledAOVList', edit=True, append=newName)
                 else:
@@ -70,7 +70,7 @@ def loadCurrentLayer():
 def modifyEnabledAOVs():
     currentLayer = mc.textField('currentLayerTXT', q=True, tx=True)
     visibleLayer = util.rendering.getCurrentLayer()
-    visibleLayer = util.naming.modifyName("delete",currentLayer,"rs_")
+    visibleLayer = util.naming.modifyName("replace",currentLayer,"rs_",'')
     
     if currentLayer == visibleLayer:
         selectedAOVs = util.select.getSelectedValuesDoubleList('enabledAOVList')
@@ -93,7 +93,7 @@ def modifyEnabledAOVs():
 def importEnabledAOVs():
     currentLayer = mc.textField('currentLayerTXT', q=True, tx=True)
     visibleLayer = util.rendering.getCurrentLayer()
-    visibleLayer = util.naming.modifyName('delete',currentLayer,"rs_")
+    visibleLayer = util.naming.modifyName('replace',currentLayer,"rs_",'')
     activeAOVs = util.select.getSelectedValuesDoubleList('activeAOVList')
 
     if currentLayer == visibleLayer:
@@ -119,7 +119,7 @@ def importEnabledAOVs():
 def exportEnabledAOVs():
     currentLayer = mc.textField('currentLayerTXT', q=True, tx=True)
     visibleLayer = util.rendering.getCurrentLayer()
-    visibleLayer = util.naming.modifyName('delete',currentLayer,"rs_")
+    visibleLayer = util.naming.modifyName('replace',currentLayer,"rs_",'')
 
     selectedAOVs = util.select.getSelectedValuesDoubleList('enabledAOVList')
     if currentLayer == visibleLayer:
